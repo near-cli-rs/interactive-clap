@@ -13,3 +13,7 @@ impl ToCli for u128 {
 impl ToCli for u64 {
     type CliVariant = u64;
 }
+
+pub trait ToInteractiveClapContextScope {
+    type InteractiveClapContextScope;
+}
