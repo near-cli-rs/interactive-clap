@@ -6,3 +6,22 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+
+# [dev-dependencies]
+clap = "3.0.0-beta.4"
+clap_generate = "3.0.0-beta.4"
+
+color-eyre = "0.5"
+
+interactive_clap_derive = { path = "./interactive_clap_derive" }
+
+near-ledger = { version = "0.1.1", optional = true }
+
+strum = { git = "https://github.com/frol/strum", branch = "feat/discriminants-pass-through-attributes", features = ["derive"] }
+strum_macros = "0.20"
+
+dialoguer = "0.9"
+
+[features]
+default = ["ledger"]
+ledger = ["near-ledger"]
