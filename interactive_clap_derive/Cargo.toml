@@ -13,8 +13,8 @@ proc-macro2 = "1.0.24"
 proc-macro-error = "1"
 quote = "1.0"
 syn = "1.0"
-clap = "3.0.0-beta.2"
-clap_generate = "3.0.0-beta.2"
+clap = "3.0.0-beta.4"
+clap_generate = "3.0.0-beta.4"
 
 # interactive_clap = { path = "../" }
 # interactive_clap = { git = "https://github.com/FroVolod/interactive-clap" }
