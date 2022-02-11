@@ -105,11 +105,37 @@ pub fn fn_choose_variant(ast: &syn::DeriveInput, variants: &syn::punctuated::Pun
                 
                                 
                             });
-                            
+
                             cli_variant = quote! {
-                                let cli_variant = match crate::common::prompt_variant(#literal.to_string().as_str()) {
+                                use dialoguer::{theme::ColorfulTheme, Select};
+                                use strum::{EnumMessage, IntoEnumIterator};
+                                fn prompt_variant<T>(prompt: &str) -> T
+                                where
+                                T: IntoEnumIterator + EnumMessage,
+                                T: Copy + Clone,
+                                {
+                                    let variants = T::iter().collect::<Vec<_>>();
+                                    let actions = variants
+                                    .iter()
+                                    .map(|p| {
+                                        p.get_message()
+                                        .unwrap_or_else(|| "error[This entry does not have an option message!!]")
+                                        .to_owned()
+                                    })
+                                    .collect::<Vec<_>>();
+                                    
+                                    let selected = Select::with_theme(&ColorfulTheme::default())
+                                    .with_prompt(prompt)
+                                    .items(&actions)
+                                    .default(0)
+                                    .interact()
+                                    .unwrap();
+                                    
+                                    variants[selected]
+                                }
+                                let cli_variant = match prompt_variant(#literal.to_string().as_str()) {
                                     #( #enum_variants, )*
-                                };                                
+                                };   
                             };
                         };
                     }

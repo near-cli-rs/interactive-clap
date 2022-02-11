@@ -1,6 +1,8 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
+mod common;
+
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(context = crate::common::ConnectionConfig)]
 struct OnlineArgs {
@@ -20,7 +22,7 @@ pub enum Submit {
 }
 
 impl Submit {
-    fn choose_variant(connection_config: crate::common::ConnectionConfig) -> color_eyre::eyre::Result<Self> {
+    fn choose_variant(connection_config: common::ConnectionConfig) -> color_eyre::eyre::Result<Self> {
         let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
         let submits = variants
             .iter()
@@ -40,12 +42,12 @@ impl Submit {
 
     fn from_cli(
         optional_clap_variant: Option<<Submit as interactive_clap::ToCli>::CliVariant>,
-        context: crate::common::ConnectionConfig,
+        context: common::ConnectionConfig,
     ) -> color_eyre::eyre::Result<Self> {
         let submit: Option<Submit> = optional_clap_variant
             .clone();
         match submit {
-            Some(_) => Ok(Submit::Send),
+            Some(submit) => Ok(submit),
             None => Ok(Submit::Display)
         }
             
@@ -57,8 +59,16 @@ impl interactive_clap::ToCli for Submit {
 }
 
 fn main() {
-    let cli_online_args = CliOnlineArgs::default();
-    println!("cli_online_args: {:?}", cli_online_args);
-    let online_args = OnlineArgs::from_cli(Some(cli_online_args), crate::common::ConnectionConfig::Testnet);
-    println!("online_args: {:?}", online_args)
+    let mut cli_online_args = OnlineArgs::parse();
+    println!("cli_online_args: {:?}", &cli_online_args);
+    let online_args = OnlineArgs::from_cli(Some(cli_online_args.clone()), common::ConnectionConfig::Testnet).unwrap();
+    println!("online_args: {:?}", online_args);
+    // cli_online_args = CliOnlineArgs::from(online_args);
+    cli_online_args = online_args.into();
+    println!("cli_online_args: {:?}", &cli_online_args);
+    let completed_cli = cli_online_args.to_cli_args();
+    println!(
+        "Your console command:\n./near-cli {}",
+        shell_words::join(&completed_cli)
+    );
 }

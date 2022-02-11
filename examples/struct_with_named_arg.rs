@@ -1,3 +1,4 @@
+use clap::Clap;
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(context = ())]
 struct OfflineArgs {
@@ -19,7 +20,7 @@ impl Sender {
 }
 
 fn main() {
-    let cli_offline_args = CliOfflineArgs::default();
+    let cli_offline_args = CliOfflineArgs::parse();
     println!("cli_offline_args: {:?}", cli_offline_args);
     let offline_args = OfflineArgs::from_cli(Some(cli_offline_args), ());
     println!("offline_args: {:?}", offline_args)

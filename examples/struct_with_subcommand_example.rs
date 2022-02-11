@@ -1,10 +1,10 @@
-mod enum_example;
+mod simple_enum;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(context = ())]
 pub struct OperationMode {
     #[interactive_clap(subcommand)]
-    pub mode: enum_example::Mode,
+    pub mode: simple_enum::Mode,
 }
 
 fn main() {
