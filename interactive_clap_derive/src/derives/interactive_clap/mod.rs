@@ -168,7 +168,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 #[clap(
                     setting(clap::AppSettings::ColoredHelp),
                     setting(clap::AppSettings::DisableHelpSubcommand),
-                    setting(clap::AppSettings::VersionlessSubcommands)
+                    // setting(clap::AppSettings::VersionlessSubcommands)
                 )]
                 pub struct #cli_name {
                     #( #cli_fields, )*
@@ -183,6 +183,14 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 impl #name {
                     #(#fn_get_arg)*
                     #fn_from_cli_for_struct
+
+                    fn try_parse() -> Result<#cli_name, clap::Error> {
+                        <#cli_name as clap::Clap>::try_parse()
+                    }
+
+                    fn parse() -> #cli_name {
+                        <#cli_name as clap::Clap>::parse()
+                    }
                 }
 
                 impl From<#name> for #cli_name {
