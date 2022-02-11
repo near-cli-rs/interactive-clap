@@ -22,7 +22,9 @@ pub enum Submit {
 }
 
 impl Submit {
-    fn choose_variant(connection_config: common::ConnectionConfig) -> color_eyre::eyre::Result<Self> {
+    fn choose_variant(
+        connection_config: common::ConnectionConfig,
+    ) -> color_eyre::eyre::Result<Self> {
         let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
         let submits = variants
             .iter()
@@ -44,13 +46,11 @@ impl Submit {
         optional_clap_variant: Option<<Submit as interactive_clap::ToCli>::CliVariant>,
         context: common::ConnectionConfig,
     ) -> color_eyre::eyre::Result<Self> {
-        let submit: Option<Submit> = optional_clap_variant
-            .clone();
+        let submit: Option<Submit> = optional_clap_variant.clone();
         match submit {
             Some(submit) => Ok(submit),
-            None => Ok(Submit::Display)
+            None => Ok(Submit::Display),
         }
-            
     }
 }
 
@@ -61,7 +61,11 @@ impl interactive_clap::ToCli for Submit {
 fn main() {
     let mut cli_online_args = OnlineArgs::parse();
     println!("cli_online_args: {:?}", &cli_online_args);
-    let online_args = OnlineArgs::from_cli(Some(cli_online_args.clone()), common::ConnectionConfig::Testnet).unwrap();
+    let online_args = OnlineArgs::from_cli(
+        Some(cli_online_args.clone()),
+        common::ConnectionConfig::Testnet,
+    )
+    .unwrap();
     println!("online_args: {:?}", online_args);
     // cli_online_args = CliOnlineArgs::from(online_args);
     cli_online_args = online_args.into();
