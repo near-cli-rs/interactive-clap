@@ -31,7 +31,7 @@ pub fn from_cli_arg(ast: &syn::DeriveInput, fields: &syn::Fields) -> Vec<proc_ma
         if fields_without_subcommand_to_string.contains(&ident_field.to_string()) & !fields_with_skip_default_from_cli_to_string.contains(&ident_field.to_string()) {
             let fn_from_cli_arg = syn::Ident::new(&format!("from_cli_{}", &ident_field), Span::call_site());
             let optional_cli_field_name = syn::Ident::new(&format!("optional_cli_{}", ident_field), Span::call_site());
-            let input_context_dir = interactive_clap_attrs_context.clone().get_inpun_context_dir();
+            let input_context_dir = interactive_clap_attrs_context.clone().get_input_context_dir();
             let cli_field_type = super::cli_field_type::cli_field_type(ty);
             let fn_input_arg = syn::Ident::new(&format!("input_{}", &ident_field), Span::call_site());
             quote! {

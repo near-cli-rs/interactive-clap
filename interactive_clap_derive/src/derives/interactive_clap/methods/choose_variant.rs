@@ -123,7 +123,7 @@ pub fn fn_choose_variant(ast: &syn::DeriveInput, variants: &syn::punctuated::Pun
             };
         };
     };
-    let input_context = interactive_clap_attrs_context.get_inpun_context_dir();
+    let input_context = interactive_clap_attrs_context.get_input_context_dir();
 
     quote! {
         pub fn choose_variant(context: #input_context) -> color_eyre::eyre::Result<Self> {

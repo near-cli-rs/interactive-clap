@@ -47,7 +47,7 @@ pub fn from_cli_for_enum(ast: &syn::DeriveInput, variants: &syn::punctuated::Pun
         
     });
 
-    let input_context_dir = interactive_clap_attrs_context.clone().get_inpun_context_dir();
+    let input_context_dir = interactive_clap_attrs_context.clone().get_input_context_dir();
     
     quote! {
         pub fn from_cli(

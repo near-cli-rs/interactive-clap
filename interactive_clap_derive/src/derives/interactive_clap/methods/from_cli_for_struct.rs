@@ -54,7 +54,7 @@ pub fn from_cli_for_struct(ast: &syn::DeriveInput, fields: &syn::Fields) -> proc
         struct_field(field, &fields_without_subcommand)                
     });
 
-    let input_context_dir = interactive_clap_attrs_context.get_inpun_context_dir();
+    let input_context_dir = interactive_clap_attrs_context.get_input_context_dir();
 
     let interactive_clap_context_scope_for_struct = syn::Ident::new(&format!("InteractiveClapContextScopeFor{}", &name), Span::call_site());
     let new_context_scope = quote! {

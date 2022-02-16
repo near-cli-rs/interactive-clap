@@ -74,7 +74,7 @@ impl InteractiveClapAttrsContext {
         }
     }
 
-    pub fn get_inpun_context_dir(self) -> proc_macro2::TokenStream {
+    pub fn get_input_context_dir(self) -> proc_macro2::TokenStream {
         let context_dir = match self.context_dir {
             Some(context_dir) => context_dir,
             None => quote! ()
