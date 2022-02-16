@@ -15,11 +15,15 @@ pub fn from_cli_for_struct(ast: &syn::DeriveInput, fields: &syn::Fields) -> proc
          return quote! (); 
     };
 
-    let fields_without_subcommand = fields.iter().map(|field| {
-        super::fields_without_subcommand::field_without_subcommand(field)                
-    })
-    .filter(|token_stream| !token_stream.is_empty())
-    .collect::<Vec<_>>();
+    let fields_without_subcommand = fields.iter()
+        .filter(|field| {
+            super::fields_without_subcommand::is_field_without_subcommand(field)                
+        })
+        .map(|field| {
+            let ident_field = &field.clone().ident.expect("this field does not exist");
+            quote! {#ident_field}
+        })
+        .collect::<Vec<_>>();
 
     let fields_value = fields.iter().map(|field| {
         fields_value(field)                

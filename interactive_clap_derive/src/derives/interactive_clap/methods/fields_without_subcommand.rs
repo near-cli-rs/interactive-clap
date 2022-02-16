@@ -4,12 +4,11 @@ use proc_macro_error::abort_call_site;
 use syn;
 use quote::quote;
 
-pub fn field_without_subcommand(field: &syn::Field) -> proc_macro2::TokenStream {
-    let ident_field = &field.clone().ident.expect("this field does not exist");
+pub fn is_field_without_subcommand(field: &syn::Field) -> bool {
     if field.attrs.is_empty() {
-        quote! {#ident_field}
-    } else {
-        match field.attrs.iter()
+        return true
+    }
+    match field.attrs.iter()
         .filter(|attr| attr.path.is_ident("interactive_clap".into()))
         .map(|attr| attr.tokens.clone())
         .flatten()
@@ -25,12 +24,8 @@ pub fn field_without_subcommand(field: &syn::Field) -> proc_macro2::TokenStream 
                 _ => abort_call_site!("Only option `TokenTree::Group` is needed")
             }
         })
-        .map(|_| {
-            quote! {#ident_field}
-        })
         .next() {
-            Some(token_stream) => token_stream,
-            None => quote! ()
+            Some(token_stream) => true,
+            None => false
         }
-    }
 }

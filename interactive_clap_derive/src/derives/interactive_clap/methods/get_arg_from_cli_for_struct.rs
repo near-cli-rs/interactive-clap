@@ -11,11 +11,15 @@ pub fn from_cli_arg(ast: &syn::DeriveInput, fields: &syn::Fields) -> Vec<proc_ma
         return vec![quote! ()]; 
     };
 
-    let fields_without_subcommand = fields.iter().map(|field| {
-        super::fields_without_subcommand::field_without_subcommand(field)                
-    })
-    .filter(|token_stream| !token_stream.is_empty())
-    .collect::<Vec<_>>();
+    let fields_without_subcommand = fields.iter()
+        .filter(|field| {
+            super::fields_without_subcommand::is_field_without_subcommand(field)                
+        })
+        .map(|field| {
+            let ident_field = &field.clone().ident.expect("this field does not exist");
+            quote! {#ident_field}
+        })
+        .collect::<Vec<_>>();
 
     let fields_with_skip_default_from_cli = fields.iter().map(|field| {
         super::fields_with_skip_default_from_cli::field_with_skip_default_from_cli(field)                
