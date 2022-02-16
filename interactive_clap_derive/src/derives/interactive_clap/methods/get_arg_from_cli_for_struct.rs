@@ -21,18 +21,22 @@ pub fn from_cli_arg(ast: &syn::DeriveInput, fields: &syn::Fields) -> Vec<proc_ma
         })
         .collect::<Vec<_>>();
 
-    let fields_with_skip_default_from_cli = fields.iter().map(|field| {
-        super::fields_with_skip_default_from_cli::field_with_skip_default_from_cli(field)                
-    })
-    .filter(|token_stream| !token_stream.is_empty())
-    .collect::<Vec<_>>();
+    let fields_without_skip_default_from_cli = fields.iter()
+        .filter(|field| {
+            super::fields_without_skip_default_from_cli::is_field_without_skip_default_from_cli(field)                
+        })
+        .map(|field| {
+            let ident_field = &field.clone().ident.expect("this field does not exist");
+            quote! {#ident_field}
+        })
+        .collect::<Vec<_>>();
 
     let get_arg_for_fields = fields.iter().map(|field| {
         let ident_field = &field.clone().ident.expect("this field does not exist");
         let ty = &field.ty;
         let fields_without_subcommand_to_string = fields_without_subcommand.iter().map(|token_stream| token_stream.to_string()).collect::<Vec<_>>();
-        let fields_with_skip_default_from_cli_to_string = fields_with_skip_default_from_cli.iter().map(|token_stream| token_stream.to_string()).collect::<Vec<_>>();
-        if fields_without_subcommand_to_string.contains(&ident_field.to_string()) & !fields_with_skip_default_from_cli_to_string.contains(&ident_field.to_string()) {
+        let fields_without_skip_default_from_cli_to_string = fields_without_skip_default_from_cli.iter().map(|token_stream| token_stream.to_string()).collect::<Vec<_>>();
+        if fields_without_subcommand_to_string.contains(&ident_field.to_string()) & fields_without_skip_default_from_cli_to_string.contains(&ident_field.to_string()) {
             let fn_from_cli_arg = syn::Ident::new(&format!("from_cli_{}", &ident_field), Span::call_site());
             let optional_cli_field_name = syn::Ident::new(&format!("optional_cli_{}", ident_field), Span::call_site());
             let input_context_dir = interactive_clap_attrs_context.clone().get_input_context_dir();
