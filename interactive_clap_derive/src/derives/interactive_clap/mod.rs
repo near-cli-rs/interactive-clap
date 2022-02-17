@@ -97,6 +97,8 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
 
             let fn_get_arg = self::methods::get_arg_from_cli_for_struct::from_cli_arg(&ast, &fields);
 
+            let vec_fn_input_arg = self::methods::input_arg::vec_input_arg(&ast, &fields);
+
             let context_scope_fields = fields.iter().map(|field| {
                 context_scope_for_struct_field(field)
             })
@@ -183,6 +185,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 impl #name {
                     #(#fn_get_arg)*
                     #fn_from_cli_for_struct
+                    #(#vec_fn_input_arg)*
 
                     fn try_parse() -> Result<#cli_name, clap::Error> {
                         <#cli_name as clap::Clap>::try_parse()
@@ -334,37 +337,14 @@ fn context_scope_for_struct(name: &syn::Ident, context_scope_fields: Vec<proc_ma
 fn context_scope_for_struct_field(field: &syn::Field) -> proc_macro2::TokenStream {
     let ident_field = &field.ident.clone().expect("this field does not exist");
     let ty = &field.ty;
-    if field.attrs.is_empty() {
+    if self::methods::fields_without_subcommand::is_field_without_subcommand(field) {
         quote! {
             pub #ident_field: #ty
         }
     } else {
-        match field.attrs.iter()
-        .filter(|attr| attr.path.is_ident("interactive_clap".into()))
-        .map(|attr| attr.tokens.clone())
-        .flatten()
-        .filter(|attr_token| {
-            match attr_token {
-                proc_macro2::TokenTree::Group(group) => {
-                    if group.stream().to_string().contains("subcommand") | group.stream().to_string().contains("named_arg") | (group.stream().to_string() == "skip".to_string()) {
-                        false
-                    } else {
-                        true
-                    }
-                },
-                _ => abort_call_site!("Only option `TokenTree::Group` is needed")
-            }
-        })
-        .map(|_| {
-            quote! {
-                pub #ident_field: #ty
-            }
-        })
-        .next() {
-            Some(token_stream) => token_stream,
-            None => quote! ()
-        }
+        quote! ()
     }
+
 }
 
 fn context_scope_for_enum(name: &syn::Ident) -> proc_macro2::TokenStream {
