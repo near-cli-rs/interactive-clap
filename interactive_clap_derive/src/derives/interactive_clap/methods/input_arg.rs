@@ -63,8 +63,7 @@ pub fn vec_input_arg(
                 fn #fn_input_arg(
                     _context: &#input_context_dir,
                 ) -> color_eyre::eyre::Result<#ty> {
-                    use dialoguer::Input;
-                    Ok(Input::new()
+                    Ok(dialoguer::Input::new()
                         .with_prompt(#literal.to_string().as_str())
                         .interact_text()?)
                 }
