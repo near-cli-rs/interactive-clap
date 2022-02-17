@@ -2,17 +2,20 @@ extern crate proc_macro;
 
 use proc_macro2::Span;
 use proc_macro_error::abort_call_site;
-use syn;
 use quote::quote;
+use syn;
 
-
-pub fn from_cli_for_enum(ast: &syn::DeriveInput, variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>) -> proc_macro2::TokenStream {
+pub fn from_cli_for_enum(
+    ast: &syn::DeriveInput,
+    variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
+) -> proc_macro2::TokenStream {
     let name = &ast.ident;
     let cli_name = syn::Ident::new(&format!("Cli{}", name), Span::call_site());
 
-    let interactive_clap_attrs_context = super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(&ast);
+    let interactive_clap_attrs_context =
+        super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(&ast);
     if interactive_clap_attrs_context.is_skip_default_from_cli {
-         return quote! (); 
+        return quote!();
     };
 
     let from_cli_variants = variants.iter().map(|variant| {
@@ -44,11 +47,12 @@ pub fn from_cli_for_enum(ast: &syn::DeriveInput, variants: &syn::punctuated::Pun
             },
             _ => abort_call_site!("Only option `Fields::Unnamed` or `Fields::Unit` is needed")
         }
-        
     });
 
-    let input_context_dir = interactive_clap_attrs_context.clone().get_input_context_dir();
-    
+    let input_context_dir = interactive_clap_attrs_context
+        .clone()
+        .get_input_context_dir();
+
     quote! {
         pub fn from_cli(
             optional_clap_variant: Option<#cli_name>,
@@ -56,7 +60,7 @@ pub fn from_cli_for_enum(ast: &syn::DeriveInput, variants: &syn::punctuated::Pun
         ) -> color_eyre::eyre::Result<Self> {
             match optional_clap_variant {
                 #(#from_cli_variants)*
-                None => Self::choose_variant(context.clone()),                             
+                None => Self::choose_variant(context.clone()),
             }
         }
     }

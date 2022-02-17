@@ -21,9 +21,9 @@ pub fn is_field_without_skip_default_from_cli(field: &syn::Field) -> bool {
                 } else {
                     false
                 }
-            },
-            _ => false // abort_call_site!("Only option `TokenTree::Group` is needed")
-    })
+            }
+            _ => false, // abort_call_site!("Only option `TokenTree::Group` is needed")
+        })
         .next()
     {
         Some(token_stream) => false,

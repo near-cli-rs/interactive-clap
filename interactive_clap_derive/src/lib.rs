@@ -7,7 +7,6 @@ use syn;
 mod derives;
 mod helpers;
 
-
 #[proc_macro_derive(InteractiveClap, attributes(interactive_clap))]
 #[proc_macro_error]
 pub fn interactive_clap(input: TokenStream) -> TokenStream {

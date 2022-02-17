@@ -3,11 +3,10 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use proc_macro_error::abort_call_site;
+use quote::{quote, ToTokens};
 use syn;
-use quote::{ToTokens, quote};
 
 mod methods;
-
 
 pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
@@ -18,92 +17,112 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
             let fields = data_struct.fields.clone();
             let mut ident_skip_field_vec: Vec<syn::Ident> = Vec::new();
 
-            let cli_fields = fields.iter().map(|field| {
-                let ident_field = field.ident.clone().expect("this field does not exist");
-                let ty = &field.ty;
-                let cli_ty = self::methods::cli_field_type::cli_field_type(ty);
-                let mut cli_field = quote! {
-                    pub #ident_field: #cli_ty
-                };
-                if field.attrs.is_empty() {
-                    return cli_field
-                };
-                let mut clap_attr_vec: Vec<proc_macro2::TokenStream> = Vec::new();
-                let mut cfg_attr_vec: Vec<proc_macro2::TokenStream> = Vec::new();
-                for attr in &field.attrs {
-                    if attr.path.is_ident("interactive_clap".into()) | attr.path.is_ident("cfg".into()) {
-                        for attr_token in attr.tokens.clone() {
-                            match attr_token {
-                                proc_macro2::TokenTree::Group(group) => {
-                                    if group.stream().to_string().contains("subcommand") | group.stream().to_string().contains("long") | (group.stream().to_string() == "skip".to_string()) {
-                                        clap_attr_vec.push(group.stream())
-                                    } else if group.stream().to_string().contains("named_arg") {
-                                        let ident_subcommand = syn::Ident::new("subcommand", Span::call_site());
-                                        clap_attr_vec.push(quote! {#ident_subcommand});
-                                        let type_string = match ty {
-                                            syn::Type::Path(type_path) => {
-                                                match type_path.path.segments.last() {
-                                                    Some(path_segment) => path_segment.ident.to_string(),
-                                                    _ => String::new()
+            let cli_fields = fields
+                .iter()
+                .map(|field| {
+                    let ident_field = field.ident.clone().expect("this field does not exist");
+                    let ty = &field.ty;
+                    let cli_ty = self::methods::cli_field_type::cli_field_type(ty);
+                    let mut cli_field = quote! {
+                        pub #ident_field: #cli_ty
+                    };
+                    if field.attrs.is_empty() {
+                        return cli_field;
+                    };
+                    let mut clap_attr_vec: Vec<proc_macro2::TokenStream> = Vec::new();
+                    let mut cfg_attr_vec: Vec<proc_macro2::TokenStream> = Vec::new();
+                    for attr in &field.attrs {
+                        if attr.path.is_ident("interactive_clap".into())
+                            | attr.path.is_ident("cfg".into())
+                        {
+                            for attr_token in attr.tokens.clone() {
+                                match attr_token {
+                                    proc_macro2::TokenTree::Group(group) => {
+                                        if group.stream().to_string().contains("subcommand")
+                                            | group.stream().to_string().contains("long")
+                                            | (group.stream().to_string() == "skip".to_string())
+                                        {
+                                            clap_attr_vec.push(group.stream())
+                                        } else if group.stream().to_string().contains("named_arg") {
+                                            let ident_subcommand =
+                                                syn::Ident::new("subcommand", Span::call_site());
+                                            clap_attr_vec.push(quote! {#ident_subcommand});
+                                            let type_string = match ty {
+                                                syn::Type::Path(type_path) => {
+                                                    match type_path.path.segments.last() {
+                                                        Some(path_segment) => {
+                                                            path_segment.ident.to_string()
+                                                        }
+                                                        _ => String::new(),
+                                                    }
                                                 }
-                                            },
-                                            _ => String::new()
+                                                _ => String::new(),
+                                            };
+                                            let enum_for_clap_named_arg = syn::Ident::new(
+                                                &format!(
+                                                    "ClapNamedArg{}For{}",
+                                                    &type_string, &name
+                                                ),
+                                                Span::call_site(),
+                                            );
+                                            cli_field = quote! {
+                                                pub #ident_field: Option<#enum_for_clap_named_arg>
+                                            }
                                         };
-                                        let enum_for_clap_named_arg = syn::Ident::new(&format!("ClapNamedArg{}For{}", &type_string, &name), Span::call_site());
-                                        cli_field = quote! {
-                                            pub #ident_field: Option<#enum_for_clap_named_arg>
-                                        }
-                                    };
-                                    if group.stream().to_string().contains("feature") {
-                                        cfg_attr_vec.push(attr.into_token_stream())
-                                    };
-                                    if group.stream().to_string() == "skip".to_string() {
-                                        ident_skip_field_vec.push(ident_field.clone());
-                                        cli_field = quote! ()
-                                    };
-                                },
-                                _ => abort_call_site!("Only option `TokenTree::Group` is needed")
+                                        if group.stream().to_string().contains("feature") {
+                                            cfg_attr_vec.push(attr.into_token_stream())
+                                        };
+                                        if group.stream().to_string() == "skip".to_string() {
+                                            ident_skip_field_vec.push(ident_field.clone());
+                                            cli_field = quote!()
+                                        };
+                                    }
+                                    _ => {
+                                        abort_call_site!("Only option `TokenTree::Group` is needed")
+                                    }
+                                }
                             }
-                        };
+                        }
                     }
-                };
-                if cli_field.is_empty() {
-                    return cli_field
-                };
-                let cfg_attrs = cfg_attr_vec.iter();
-                if !clap_attr_vec.is_empty() {
-                    let clap_attrs = clap_attr_vec.iter();
-                    quote! {
-                        #(#cfg_attrs)*
-                        #[clap(#(#clap_attrs, )*)]
-                        #cli_field
+                    if cli_field.is_empty() {
+                        return cli_field;
+                    };
+                    let cfg_attrs = cfg_attr_vec.iter();
+                    if !clap_attr_vec.is_empty() {
+                        let clap_attrs = clap_attr_vec.iter();
+                        quote! {
+                            #(#cfg_attrs)*
+                            #[clap(#(#clap_attrs, )*)]
+                            #cli_field
+                        }
+                    } else {
+                        quote! {
+                            #(#cfg_attrs)*
+                            #cli_field
+                        }
                     }
-                } else {
-                    quote! {
-                        #(#cfg_attrs)*
-                        #cli_field
-                    }
-                }
-            })
-            .filter(|token_stream| !token_stream.is_empty())
-            .collect::<Vec<_>>();
-            
-            let for_cli_fields = fields.iter().map(|field| {
-                for_cli_field(field, &ident_skip_field_vec)                
-            })
-            .filter(|token_stream| !token_stream.is_empty());
+                })
+                .filter(|token_stream| !token_stream.is_empty())
+                .collect::<Vec<_>>();
 
-            let fn_from_cli_for_struct = self::methods::from_cli_for_struct::from_cli_for_struct(&ast, &fields);
+            let for_cli_fields = fields
+                .iter()
+                .map(|field| for_cli_field(field, &ident_skip_field_vec))
+                .filter(|token_stream| !token_stream.is_empty());
 
-            let fn_get_arg = self::methods::get_arg_from_cli_for_struct::from_cli_arg(&ast, &fields);
+            let fn_from_cli_for_struct =
+                self::methods::from_cli_for_struct::from_cli_for_struct(&ast, &fields);
+
+            let fn_get_arg =
+                self::methods::get_arg_from_cli_for_struct::from_cli_arg(&ast, &fields);
 
             let vec_fn_input_arg = self::methods::input_arg::vec_input_arg(&ast, &fields);
 
-            let context_scope_fields = fields.iter().map(|field| {
-                context_scope_for_struct_field(field)
-            })
-            .filter(|token_stream| !token_stream.is_empty())
-            .collect::<Vec<_>>();
+            let context_scope_fields = fields
+                .iter()
+                .map(|field| context_scope_for_struct_field(field))
+                .filter(|token_stream| !token_stream.is_empty())
+                .collect::<Vec<_>>();
             let context_scope_for_struct = context_scope_for_struct(&name, context_scope_fields);
 
             let clap_enum_for_named_arg =
@@ -115,7 +134,6 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                         .filter(|attr| attr.path.is_ident("doc".into()))
                         .map(|attr| attr.into_token_stream())
                         .collect();
-                    
                     field.attrs.iter()
                         .filter(|attr| attr.path.is_ident("interactive_clap".into()))
                         .map(|attr| attr.tokens.clone())
@@ -224,16 +242,17 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                                     proc_macro2::TokenTree::Group(group) => {
                                         if group.stream().to_string().contains("feature") {
                                             attrs.push(attr.into_token_stream());
-                                        
                                         } else {
                                             continue;
                                         };
-                                    },
-                                    _ => abort_call_site!("Only option `TokenTree::Group` is needed")
+                                    }
+                                    _ => {
+                                        abort_call_site!("Only option `TokenTree::Group` is needed")
+                                    }
                                 }
-                            };
+                            }
                         };
-                    };
+                    }
                     match &variant.fields {
                         syn::Fields::Unnamed(fields) => {
                             let ty = &fields.unnamed[0].ty;
@@ -245,7 +264,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                                     #ident(<#ty as interactive_clap::ToCli>::CliVariant)
                                 }
                             }
-                        },
+                        }
                         syn::Fields::Unit => {
                             if attrs.is_empty() {
                                 quote! {#ident}
@@ -255,20 +274,23 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                                     #ident
                                 }
                             }
-                        },
-                        _ => abort_call_site!("Only option `Fields::Unnamed` or `Fields::Unit` is needed")
+                        }
+                        _ => abort_call_site!(
+                            "Only option `Fields::Unnamed` or `Fields::Unit` is needed"
+                        ),
                     }
                 } else {
                     match &variant.fields {
                         syn::Fields::Unnamed(fields) => {
                             let ty = &fields.unnamed[0].ty;
                             quote! { #ident(<#ty as interactive_clap::ToCli>::CliVariant) }
-                            
-                        },
+                        }
                         syn::Fields::Unit => {
                             quote! { #ident }
-                        },
-                        _ => abort_call_site!("Only option `Fields::Unnamed` or `Fields::Unit` is needed")
+                        }
+                        _ => abort_call_site!(
+                            "Only option `Fields::Unnamed` or `Fields::Unit` is needed"
+                        ),
                     }
                 }
             });
@@ -277,11 +299,13 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 match &variant.fields {
                     syn::Fields::Unnamed(_) => {
                         quote! { #name::#ident(arg) => Self::#ident(arg.into()) }
-                    },
+                    }
                     syn::Fields::Unit => {
                         quote! { #name::#ident => Self::#ident }
-                    },
-                    _ => abort_call_site!("Only option `Fields::Unnamed` or `Fields::Unit` is needed")
+                    }
+                    _ => abort_call_site!(
+                        "Only option `Fields::Unnamed` or `Fields::Unit` is needed"
+                    ),
                 }
             });
 
@@ -289,7 +313,8 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
 
             let fn_choose_variant = self::methods::choose_variant::fn_choose_variant(ast, variants);
 
-            let fn_from_cli_for_enum = self::methods::from_cli_for_enum::from_cli_for_enum(ast, variants);
+            let fn_from_cli_for_enum =
+                self::methods::from_cli_for_enum::from_cli_for_enum(ast, variants);
 
             let gen = quote! {
                 #[derive(Debug, Clone, clap::Clap, interactive_clap_derive::ToCliArgs)]
@@ -302,7 +327,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 }
 
                 #scope_for_enum
-                
+
                 impl From<#name> for #cli_name {
                     fn from(command: #name) -> Self {
                         match command {
@@ -310,7 +335,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                         }
                     }
                 }
-                
+
                 impl #name {
                     #fn_choose_variant
                     #fn_from_cli_for_enum
@@ -318,12 +343,18 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
             };
             gen.into()
         }
-        _ => abort_call_site!("`#[derive(InteractiveClap)]` only supports structs and enums")
+        _ => abort_call_site!("`#[derive(InteractiveClap)]` only supports structs and enums"),
     }
 }
 
-fn context_scope_for_struct(name: &syn::Ident, context_scope_fields: Vec<proc_macro2::TokenStream>) -> proc_macro2::TokenStream {
-    let interactive_clap_context_scope_for_struct = syn::Ident::new(&format!("InteractiveClapContextScopeFor{}", &name), Span::call_site());
+fn context_scope_for_struct(
+    name: &syn::Ident,
+    context_scope_fields: Vec<proc_macro2::TokenStream>,
+) -> proc_macro2::TokenStream {
+    let interactive_clap_context_scope_for_struct = syn::Ident::new(
+        &format!("InteractiveClapContextScopeFor{}", &name),
+        Span::call_site(),
+    );
     quote! {
         pub struct #interactive_clap_context_scope_for_struct {
             #(#context_scope_fields,)*
@@ -342,13 +373,15 @@ fn context_scope_for_struct_field(field: &syn::Field) -> proc_macro2::TokenStrea
             pub #ident_field: #ty
         }
     } else {
-        quote! ()
+        quote!()
     }
-
 }
 
 fn context_scope_for_enum(name: &syn::Ident) -> proc_macro2::TokenStream {
-    let interactive_clap_context_scope_for_enum = syn::Ident::new(&format!("InteractiveClapContextScopeFor{}", &name), Span::call_site());
+    let interactive_clap_context_scope_for_enum = syn::Ident::new(
+        &format!("InteractiveClapContextScopeFor{}", &name),
+        Span::call_site(),
+    );
     let enum_discriminants = syn::Ident::new(&format!("{}Discriminants", &name), Span::call_site());
     quote! {
         pub type #interactive_clap_context_scope_for_enum = #enum_discriminants;
@@ -358,29 +391,31 @@ fn context_scope_for_enum(name: &syn::Ident) -> proc_macro2::TokenStream {
     }
 }
 
-fn for_cli_field(field: &syn::Field, ident_skip_field_vec: &Vec<syn::Ident>) -> proc_macro2::TokenStream {
+fn for_cli_field(
+    field: &syn::Field,
+    ident_skip_field_vec: &Vec<syn::Ident>,
+) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
     if ident_skip_field_vec.contains(&ident_field) {
-        quote! ()
+        quote!()
     } else {
         let ty = &field.ty;
         match &ty {
-            syn::Type::Path(type_path) => {
-                match type_path.path.segments.first() {
-                    Some(path_segment) => {
-                        if path_segment.ident.eq("Option".into()) {
-                            quote! {
-                                #ident_field: args.#ident_field.into()
-                            }
-                        } else {
-                            quote! {
-                                #ident_field: Some(args.#ident_field.into())
-                            }
+            syn::Type::Path(type_path) => match type_path.path.segments.first() {
+                Some(path_segment) => {
+                    if path_segment.ident.eq("Option".into()) {
+                        quote! {
+                            #ident_field: args.#ident_field.into()
                         }
-                    },
-                    _ => abort_call_site!("Only option `PathSegment` is needed")
-            }},
-            _ => abort_call_site!("Only option `Type::Path` is needed")
+                    } else {
+                        quote! {
+                            #ident_field: Some(args.#ident_field.into())
+                        }
+                    }
+                }
+                _ => abort_call_site!("Only option `PathSegment` is needed"),
+            },
+            _ => abort_call_site!("Only option `Type::Path` is needed"),
         }
     }
 }

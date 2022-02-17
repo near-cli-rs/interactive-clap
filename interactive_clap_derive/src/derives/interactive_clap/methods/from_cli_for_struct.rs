@@ -2,69 +2,84 @@ extern crate proc_macro;
 
 use proc_macro2::Span;
 use proc_macro_error::abort_call_site;
-use syn;
 use quote::quote;
+use syn;
 
-
-pub fn from_cli_for_struct(ast: &syn::DeriveInput, fields: &syn::Fields) -> proc_macro2::TokenStream {
+pub fn from_cli_for_struct(
+    ast: &syn::DeriveInput,
+    fields: &syn::Fields,
+) -> proc_macro2::TokenStream {
     let name = &ast.ident;
     let cli_name = syn::Ident::new(&format!("Cli{}", name), Span::call_site());
 
-    let interactive_clap_attrs_context = super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(&ast);
+    let interactive_clap_attrs_context =
+        super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(&ast);
     if interactive_clap_attrs_context.is_skip_default_from_cli {
-         return quote! (); 
+        return quote!();
     };
 
-    let fields_without_subcommand = fields.iter()
-        .filter(|field| {
-            super::fields_without_subcommand::is_field_without_subcommand(field)                
-        })
+    let fields_without_subcommand = fields
+        .iter()
+        .filter(|field| super::fields_without_subcommand::is_field_without_subcommand(field))
         .map(|field| {
             let ident_field = &field.clone().ident.expect("this field does not exist");
             quote! {#ident_field}
         })
         .collect::<Vec<_>>();
 
-    let fields_value = fields.iter().map(|field| {
-        fields_value(field)                
-    })
-    .filter(|token_stream| !token_stream.is_empty());
+    let fields_value = fields
+        .iter()
+        .map(|field| fields_value(field))
+        .filter(|token_stream| !token_stream.is_empty());
 
-    let field_value_named_arg = 
-        if let Some(token_stream) = fields.iter().map(|field| {
-            field_value_named_arg(name, field, &interactive_clap_attrs_context.output_context_dir)                
+    let field_value_named_arg = if let Some(token_stream) = fields
+        .iter()
+        .map(|field| {
+            field_value_named_arg(
+                name,
+                field,
+                &interactive_clap_attrs_context.output_context_dir,
+            )
         })
         .filter(|token_stream| !token_stream.is_empty())
         .next()
-        {
-            token_stream
-        } else {
-            quote! ()
-        };
+    {
+        token_stream
+    } else {
+        quote!()
+    };
 
-    let field_value_subcommand = 
-        if let Some(token_stream) = fields.iter().map(|field| {
-            field_value_subcommand(name, field, &interactive_clap_attrs_context.output_context_dir)                
+    let field_value_subcommand = if let Some(token_stream) = fields
+        .iter()
+        .map(|field| {
+            field_value_subcommand(
+                name,
+                field,
+                &interactive_clap_attrs_context.output_context_dir,
+            )
         })
         .filter(|token_stream| !token_stream.is_empty())
         .next()
-        {
-            token_stream
-        } else {
-            quote! ()
-        };
+    {
+        token_stream
+    } else {
+        quote!()
+    };
 
-    let struct_fields = fields.iter().map(|field| {
-        struct_field(field, &fields_without_subcommand)                
-    });
+    let struct_fields = fields
+        .iter()
+        .map(|field| struct_field(field, &fields_without_subcommand));
 
     let input_context_dir = interactive_clap_attrs_context.get_input_context_dir();
 
-    let interactive_clap_context_scope_for_struct = syn::Ident::new(&format!("InteractiveClapContextScopeFor{}", &name), Span::call_site());
+    let interactive_clap_context_scope_for_struct = syn::Ident::new(
+        &format!("InteractiveClapContextScopeFor{}", &name),
+        Span::call_site(),
+    );
     let new_context_scope = quote! {
         let new_context_scope = #interactive_clap_context_scope_for_struct { #(#fields_without_subcommand,)* };
     };
-    
+
     quote! {
         pub fn from_cli(
             optional_clap_variant: Option<#cli_name>,
@@ -92,15 +107,19 @@ fn fields_value(field: &syn::Field) -> proc_macro2::TokenStream {
             )?;
         }
     } else {
-        quote! ()
+        quote!()
     }
 }
 
-fn field_value_named_arg(name: &syn::Ident, field: &syn::Field, output_context_dir: &Option<proc_macro2::TokenStream>) -> proc_macro2::TokenStream {
+fn field_value_named_arg(
+    name: &syn::Ident,
+    field: &syn::Field,
+    output_context_dir: &Option<proc_macro2::TokenStream>,
+) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
     let ty = &field.ty;
     if field.attrs.is_empty() {
-        quote! ()
+        quote!()
     } else {
         match field.attrs.iter()
         .filter(|attr| attr.path.is_ident("interactive_clap".into()))
@@ -163,11 +182,15 @@ fn field_value_named_arg(name: &syn::Ident, field: &syn::Field, output_context_d
     }
 }
 
-fn field_value_subcommand(name: &syn::Ident, field: &syn::Field, output_context_dir: &Option<proc_macro2::TokenStream>) -> proc_macro2::TokenStream {
+fn field_value_subcommand(
+    name: &syn::Ident,
+    field: &syn::Field,
+    output_context_dir: &Option<proc_macro2::TokenStream>,
+) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
     let ty = &field.ty;
     if field.attrs.is_empty() {
-        quote! ()
+        quote!()
     } else {
         match field.attrs.iter()
         .filter(|attr| attr.path.is_ident("interactive_clap".into()))
@@ -212,9 +235,15 @@ fn field_value_subcommand(name: &syn::Ident, field: &syn::Field, output_context_
     }
 }
 
-fn struct_field(field: &syn::Field, fields_without_subcommand: &Vec<proc_macro2::TokenStream>) -> proc_macro2::TokenStream {
+fn struct_field(
+    field: &syn::Field,
+    fields_without_subcommand: &Vec<proc_macro2::TokenStream>,
+) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
-    let fields_without_subcommand_to_string = fields_without_subcommand.iter().map(|token_stream| token_stream.to_string()).collect::<Vec<_>>();
+    let fields_without_subcommand_to_string = fields_without_subcommand
+        .iter()
+        .map(|token_stream| token_stream.to_string())
+        .collect::<Vec<_>>();
     if fields_without_subcommand_to_string.contains(&ident_field.to_string()) {
         quote! {
             #ident_field: new_context_scope.#ident_field
