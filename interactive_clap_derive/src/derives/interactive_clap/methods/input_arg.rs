@@ -34,12 +34,13 @@ pub fn vec_input_arg(
                 syn::Ident::new(&format!("input_{}", &ident_field), Span::call_site());
 
             if field.attrs.is_empty() {
+                let promt = &syn::LitStr::new(&ident_field.to_string(), Span::call_site());
                 return quote! {
                     fn #fn_input_arg(
                         _context: &#input_context_dir,
                     ) -> color_eyre::eyre::Result<#ty> {
                         Ok(dialoguer::Input::new()
-                            .with_prompt("")
+                            .with_prompt(#promt)
                             .interact_text()?)
                     }
                 };
