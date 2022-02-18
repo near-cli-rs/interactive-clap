@@ -1,10 +1,17 @@
+// 1) собрать пример: cargo build --example to_cli_args
+// 2) cd target/debug/examples
+// 3) запустить пример: ./to_cli_args (без параметров) => entered interactive mode
+//                      ./to_cli_args send    => Your console command:  send
+//                      ./to_cli_args display => Your console command:  display
+
+
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod common;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = crate::common::ConnectionConfig)]
+#[interactive_clap(context = common::ConnectionConfig)]
 struct OnlineArgs {
     #[interactive_clap(subcommand)]
     submit: Submit,
@@ -60,19 +67,12 @@ impl interactive_clap::ToCli for Submit {
 
 fn main() {
     let mut cli_online_args = OnlineArgs::parse();
-    println!("cli_online_args: {:?}", &cli_online_args);
-    let online_args = OnlineArgs::from_cli(
-        Some(cli_online_args.clone()),
-        common::ConnectionConfig::Testnet,
-    )
-    .unwrap();
-    println!("online_args: {:?}", online_args);
-    // cli_online_args = CliOnlineArgs::from(online_args);
+    let context = common::ConnectionConfig::Testnet;  //#[interactive_clap(context = common::ConnectionConfig)]
+    let online_args = OnlineArgs::from_cli(Some(cli_online_args), context).unwrap();
     cli_online_args = online_args.into();
-    println!("cli_online_args: {:?}", &cli_online_args);
     let completed_cli = cli_online_args.to_cli_args();
     println!(
-        "Your console command:\n./near-cli {}",
+        "Your console command:  {}",
         shell_words::join(&completed_cli)
     );
 }

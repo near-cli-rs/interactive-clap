@@ -1,27 +1,23 @@
+// cargo run --example struct_with_named_arg account QWERTY => account: Ok(Account { account: Sender { sender_account_id: "QWERTY" } })
+// cargo run --example struct_with_named_arg                => entered interactive mode
+
 use clap::Clap;
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = ())]
-struct OfflineArgs {
+struct Account {
     #[interactive_clap(named_arg)]
     ///Specify a sender
     account: Sender,
 }
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = ())]
 pub struct Sender {
+    ///What is the account ID?
     pub sender_account_id: String,
 }
 
-impl Sender {
-    fn input_sender_account_id(context: &()) -> color_eyre::eyre::Result<String> {
-        Ok("Volodymyr".to_string())
-    }
-}
-
 fn main() {
-    let cli_offline_args = CliOfflineArgs::parse();
-    println!("cli_offline_args: {:?}", cli_offline_args);
-    let offline_args = OfflineArgs::from_cli(Some(cli_offline_args), ());
-    println!("offline_args: {:?}", offline_args)
+    let cli_account = Account::parse();
+    let context = ();  // default: input_context = ()
+    let account = Account::from_cli(Some(cli_account), context);
+    println!("account: {:?}", account)
 }

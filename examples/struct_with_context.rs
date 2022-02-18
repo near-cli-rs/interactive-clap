@@ -1,3 +1,8 @@
+// cargo run --example struct_with_context account QWERTY => offline_args: Ok(OfflineArgs { account: Sender { sender_account_id: "QWERTY" } })
+// cargo run --example struct_with_context                => entered interactive mode
+
+mod common;
+
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = ())]
 #[interactive_clap(output_context = OfflineArgsContext)]
@@ -27,24 +32,27 @@ impl From<OfflineArgsContext> for NetworkContext {
 }
 
 pub struct NetworkContext {
-    pub connection_config: Option<crate::common::ConnectionConfig>,
+    pub connection_config: Option<common::ConnectionConfig>,
 }
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(context = OfflineArgsContext)]
 pub struct Sender {
+    #[interactive_clap(skip_default_input_arg)]
     pub sender_account_id: String,
 }
 
 impl Sender {
     fn input_sender_account_id(context: &OfflineArgsContext) -> color_eyre::eyre::Result<String> {
-        Ok("Volodymyr".to_string())
+        Ok(dialoguer::Input::new()
+            .with_prompt("What is the account ID?")
+            .interact_text()?)
     }
 }
 
 fn main() {
-    let cli_offline_args = CliOfflineArgs::default();
-    println!("cli_offline_args: {:?}", cli_offline_args);
-    let offline_args = OfflineArgs::from_cli(Some(cli_offline_args), ());
+    let cli_offline_args = OfflineArgs::parse();
+    let context = (); // #[interactive_clap(input_context = ())]
+    let offline_args = OfflineArgs::from_cli(Some(cli_offline_args), context);
     println!("offline_args: {:?}", offline_args)
 }
