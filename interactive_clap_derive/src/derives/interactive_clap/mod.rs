@@ -339,6 +339,14 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 impl #name {
                     #fn_choose_variant
                     #fn_from_cli_for_enum
+
+                    fn try_parse() -> Result<#cli_name, clap::Error> {
+                        <#cli_name as clap::Clap>::try_parse()
+                    }
+
+                    fn parse() -> #cli_name {
+                        <#cli_name as clap::Clap>::parse()
+                    }
                 }
             };
             gen.into()
