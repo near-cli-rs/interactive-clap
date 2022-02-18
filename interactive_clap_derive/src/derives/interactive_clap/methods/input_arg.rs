@@ -23,9 +23,6 @@ pub fn vec_input_arg(
             )
         })
         .map(|field| {
-            if field.attrs.is_empty() {
-                return quote!();
-            }
             let ident_field = &field.clone().ident.expect("this field does not exist");
             let ty = &field.ty;
 
@@ -35,6 +32,18 @@ pub fn vec_input_arg(
 
             let fn_input_arg =
                 syn::Ident::new(&format!("input_{}", &ident_field), Span::call_site());
+
+            if field.attrs.is_empty() {
+                return quote! {
+                    fn #fn_input_arg(
+                        _context: &#input_context_dir,
+                    ) -> color_eyre::eyre::Result<#ty> {
+                        Ok(dialoguer::Input::new()
+                            .with_prompt("")
+                            .interact_text()?)
+                    }
+                };
+            }
 
             let doc_attrs = field
                 .attrs
