@@ -116,7 +116,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
             let fn_get_arg =
                 self::methods::get_arg_from_cli_for_struct::from_cli_arg(&ast, &fields);
 
-            let vec_fn_input_arg = self::methods::input_arg::vec_input_arg(&ast, &fields);
+            let vec_fn_input_arg = self::methods::input_arg::vec_fn_input_arg(&ast, &fields);
 
             let context_scope_fields = fields
                 .iter()

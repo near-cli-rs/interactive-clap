@@ -4,7 +4,7 @@ use proc_macro_error::abort_call_site;
 use quote::quote;
 use syn;
 
-pub fn is_field_without_skip_default_from_cli(field: &syn::Field) -> bool {
+pub fn is_field_without_skip_default_from_cli_arg(field: &syn::Field) -> bool {
     if field.attrs.is_empty() {
         return true;
     }
@@ -16,7 +16,7 @@ pub fn is_field_without_skip_default_from_cli(field: &syn::Field) -> bool {
         .flatten()
         .filter(|attr_token| match attr_token {
             proc_macro2::TokenTree::Group(group) => {
-                if group.stream().to_string().contains("skip_default_from_cli") {
+                if group.stream().to_string().contains("skip_default_from_cli_arg") {
                     true
                 } else {
                     false

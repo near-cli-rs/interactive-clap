@@ -5,15 +5,12 @@ use proc_macro_error::abort_call_site;
 use quote::{__private::ext::RepToTokensExt, quote};
 use syn;
 
-pub fn vec_input_arg(
+pub fn vec_fn_input_arg(
     ast: &syn::DeriveInput,
     fields: &syn::Fields,
 ) -> Vec<proc_macro2::TokenStream> {
     let interactive_clap_attrs_context =
         super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(&ast);
-    if interactive_clap_attrs_context.is_skip_default_from_cli {
-        return vec![quote!()];
-    };
     let vec_fn_input_arg = fields
         .iter()
         .filter(|field| super::fields_without_subcommand::is_field_without_subcommand(field))

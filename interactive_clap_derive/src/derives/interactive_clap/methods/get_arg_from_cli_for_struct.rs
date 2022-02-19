@@ -7,9 +7,6 @@ use syn;
 pub fn from_cli_arg(ast: &syn::DeriveInput, fields: &syn::Fields) -> Vec<proc_macro2::TokenStream> {
     let interactive_clap_attrs_context =
         super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(&ast);
-    if interactive_clap_attrs_context.is_skip_default_from_cli {
-        return vec![quote!()];
-    };
 
     let fields_without_subcommand = fields
         .iter()
@@ -20,10 +17,10 @@ pub fn from_cli_arg(ast: &syn::DeriveInput, fields: &syn::Fields) -> Vec<proc_ma
         })
         .collect::<Vec<_>>();
 
-    let fields_without_skip_default_from_cli = fields
+    let fields_without_skip_default_from_cli_arg = fields
         .iter()
         .filter(|field| {
-            super::fields_without_skip_default_from_cli::is_field_without_skip_default_from_cli(
+            super::fields_without_skip_default_from_cli_arg::is_field_without_skip_default_from_cli_arg(
                 field,
             )
         })
@@ -42,13 +39,14 @@ pub fn from_cli_arg(ast: &syn::DeriveInput, fields: &syn::Fields) -> Vec<proc_ma
                 .iter()
                 .map(|token_stream| token_stream.to_string())
                 .collect::<Vec<_>>();
-            let fields_without_skip_default_from_cli_to_string =
-                fields_without_skip_default_from_cli
+            let fields_without_skip_default_from_cli_arg_to_string =
+                fields_without_skip_default_from_cli_arg
                     .iter()
                     .map(|token_stream| token_stream.to_string())
                     .collect::<Vec<_>>();
             if fields_without_subcommand_to_string.contains(&ident_field.to_string())
-                & fields_without_skip_default_from_cli_to_string.contains(&ident_field.to_string())
+                & fields_without_skip_default_from_cli_arg_to_string
+                    .contains(&ident_field.to_string())
             {
                 let fn_from_cli_arg =
                     syn::Ident::new(&format!("from_cli_{}", &ident_field), Span::call_site());
