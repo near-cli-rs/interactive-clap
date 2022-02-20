@@ -1,5 +1,9 @@
-// cargo run --example struct_with_named_arg account QWERTY => account: Ok(Account { account: Sender { sender_account_id: "QWERTY" } })
-// cargo run --example struct_with_named_arg                => entered interactive mode
+// 1) build an example: cargo build --example struct_with_named_arg
+// 2) go to the `examples` folder: cd target/debug/examples
+// 3) run an example: ./struct_with_named_arg (without parameters) => entered interactive mode
+//                    ./struct_with_named_arg account QWERTY => account: Ok(Account { account: Sender { sender_account_id: "QWERTY" } })
+// To learn more about the parameters, use "help" flag: ./struct_with_named_arg --help
+
 
 use clap::Clap;
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]

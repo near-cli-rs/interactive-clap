@@ -1,7 +1,9 @@
-// cargo run --example simple_struct -- --age-full-years 30 --first-name QWE --second-name QWERTY =>
-//                                    => args: Ok(Args { age: 30, first_name: "QWE", second_name: "QWERTY" })
+// 1) build an example: cargo build --example simple_struct
+// 2) go to the `examples` folder: cd target/debug/examples
+// 3) run an example: ./simple_struct (without parameters) => entered interactive mode
+//                    ./simple_struct 30 QWE QWERTY => args: Ok(Args { age: 30, first_name: "QWE", second_name: "QWERTY" })
+// To learn more about the parameters, use "help" flag: ./simple_struct --help
 
-// cargo run --example simple_struct  => entered interactive mode
 
 #[derive(Debug, interactive_clap_derive::InteractiveClap)]
 struct Args {

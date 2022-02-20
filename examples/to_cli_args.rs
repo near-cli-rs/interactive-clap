@@ -1,8 +1,9 @@
-// 1) собрать пример: cargo build --example to_cli_args
-// 2) cd target/debug/examples
-// 3) запустить пример: ./to_cli_args (без параметров) => entered interactive mode
-//                      ./to_cli_args send    => Your console command:  send
-//                      ./to_cli_args display => Your console command:  display
+// 1) build an example: cargo build --example to_cli_args
+// 2) go to the `examples` folder: cd target/debug/examples
+// 3) run an example: ./to_cli_args (without parameters) => entered interactive mode
+//                    ./to_cli_args send    => Your console command:  send
+//                    ./to_cli_args display => Your console command:  display
+// To learn more about the parameters, use "help" flag: ./to_cli_args --help
 
 
 use dialoguer::{theme::ColorfulTheme, Select};

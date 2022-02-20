@@ -1,8 +1,9 @@
-// 1) собрать пример: cargo build --example simple_enum
-// 2) cd target/debug/examples
-// 3) запустить пример: ./simple_enum (без параметров) => entered interactive mode
-//                      ./simple_enum network          => mode: Ok(Network)
-//                      ./simple_enum offline          => mode: Ok(Offline)
+// 1) build an example: cargo build --example simple_enum
+// 2) go to the `examples` folder: cd target/debug/examples
+// 3) run an example: ./simple_enum (without parameters) => entered interactive mode
+//                    ./simple_enum network              => mode: Ok(Network)
+//                    ./simple_enum offline              => mode: Ok(Offline)
+// To learn more about the parameters, use "help" flag: ./simple_enum --help
 
 
 use dialoguer::{theme::ColorfulTheme, Select};
