@@ -1,3 +1,5 @@
+// This example shows additional functionality of the "interactive-clap" macro for parsing command-line data into a structure using macro attributes.
+
 // 1) build an example: cargo build --example advanced_struct
 // 2) go to the `examples` folder: cd target/debug/examples
 // 3) run an example: ./advanced_struct (without parameters) => entered interactive mode
@@ -5,9 +7,8 @@
 //                                    => args: Ok(Args { age: 30, first_name: "QWE", second_name: "QWERTY" })
 // To learn more about the parameters, use "help" flag: ./advanced_struct --help
 
-
 #[derive(Debug, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(skip_default_from_cli)] 
+#[interactive_clap(skip_default_from_cli)]
 struct Args {
     #[interactive_clap(long = "age-full-years")] // hgfashdgfajdfsadajsdfh
     #[interactive_clap(skip_default_from_cli_arg)] // указать для чего этот атрибут нужен
@@ -18,7 +19,7 @@ struct Args {
     first_name: String,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    second_name: String
+    second_name: String,
 }
 
 impl Args {

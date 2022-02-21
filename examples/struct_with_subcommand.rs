@@ -1,10 +1,11 @@
+// This example shows additional functionality of the "interactive-clap" macro for parsing command line data into a structure using a subcommand in the macro attribute.
+
 // 1) build an example: cargo build --example struct_with_subcommand
 // 2) go to the `examples` folder: cd target/debug/examples
 // 3) run an example: ./struct_with_subcommand (without parameters) => entered interactive mode
 //                    ./struct_with_subcommand network => operation_mode: Ok(OperationMode { mode: Network })
 //                    ./struct_with_subcommand offline => operation_mode: Ok(OperationMode { mode: Offline })
 // To learn more about the parameters, use "help" flag: ./struct_with_subcommand --help
-
 
 mod simple_enum;
 

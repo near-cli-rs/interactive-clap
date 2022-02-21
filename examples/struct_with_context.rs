@@ -1,9 +1,10 @@
+// This example shows additional functionality of the "interactive-clap" macro for parsing command line data into a structure using the context attributes of the macro.
+
 // 1) build an example: cargo build --example struct_with_context
 // 2) go to the `examples` folder: cd target/debug/examples
 // 3) run an example: ./struct_with_context (without parameters) => entered interactive mode
 //                    ./struct_with_context account QWERTY => offline_args: Ok(OfflineArgs { account: Sender { sender_account_id: "QWERTY" } })
 // To learn more about the parameters, use "help" flag: ./struct_with_context --help
-
 
 mod common;
 

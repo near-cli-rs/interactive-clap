@@ -1,10 +1,11 @@
+//This example shows how to parse data from the command line to an enum using the "interactive-clap" macro.
+
 // 1) build an example: cargo build --example simple_enum
 // 2) go to the `examples` folder: cd target/debug/examples
 // 3) run an example: ./simple_enum (without parameters) => entered interactive mode
 //                    ./simple_enum network              => mode: Ok(Network)
 //                    ./simple_enum offline              => mode: Ok(Offline)
 // To learn more about the parameters, use "help" flag: ./simple_enum --help
-
 
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};

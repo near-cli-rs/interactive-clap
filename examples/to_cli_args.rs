@@ -1,10 +1,11 @@
+// The "to_cli_args" method of the "interactive-clap" macro is designed to form and print the cli command using the interactive mode for entering parameters.
+
 // 1) build an example: cargo build --example to_cli_args
 // 2) go to the `examples` folder: cd target/debug/examples
 // 3) run an example: ./to_cli_args (without parameters) => entered interactive mode
 //                    ./to_cli_args send    => Your console command:  send
 //                    ./to_cli_args display => Your console command:  display
 // To learn more about the parameters, use "help" flag: ./to_cli_args --help
-
 
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
@@ -68,7 +69,7 @@ impl interactive_clap::ToCli for Submit {
 
 fn main() {
     let mut cli_online_args = OnlineArgs::parse();
-    let context = common::ConnectionConfig::Testnet;  //#[interactive_clap(context = common::ConnectionConfig)]
+    let context = common::ConnectionConfig::Testnet; //#[interactive_clap(context = common::ConnectionConfig)]
     let online_args = OnlineArgs::from_cli(Some(cli_online_args), context).unwrap();
     cli_online_args = online_args.into();
     let completed_cli = cli_online_args.to_cli_args();
