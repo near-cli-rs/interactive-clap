@@ -6,7 +6,7 @@
 //                    ./simple_struct 30 QWE QWERTY => args: Ok(Args { age: 30, first_name: "QWE", second_name: "QWERTY" })
 // To learn more about the parameters, use "help" flag: ./simple_struct --help
 
-#[derive(Debug, interactive_clap_derive::InteractiveClap)]
+#[derive(Debug, interactive_clap::InteractiveClap)]
 struct Args {
     age: u64,
     first_name: String,
