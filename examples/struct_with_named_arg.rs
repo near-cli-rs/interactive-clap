@@ -7,7 +7,7 @@
 //                    ./struct_with_named_arg account QWERTY => account: Ok(Account { account: Sender { sender_account_id: "QWERTY" } })
 // To learn more about the parameters, use "help" flag: ./struct_with_named_arg --help
 
-use clap::Clap;
+use clap::Parser;
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 struct Account {
     #[interactive_clap(named_arg)]

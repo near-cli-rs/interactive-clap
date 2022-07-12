@@ -163,7 +163,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                             };
                             let enum_for_clap_named_arg = syn::Ident::new(&format!("ClapNamedArg{}For{}", &type_string, &name), Span::call_site());
                             quote! {
-                                #[derive(Debug, Clone, clap::Clap, interactive_clap_derive::ToCliArgs)]
+                                #[derive(Debug, Clone, clap::Parser, interactive_clap_derive::ToCliArgs)]
                                 pub enum #enum_for_clap_named_arg {
                                     #(#attr_doc_vec)*
                                     #variant_name(<#ty as interactive_clap::ToCli>::CliVariant)
@@ -184,7 +184,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 };
 
             let gen = quote! {
-                #[derive(Debug, Default, Clone, clap::Clap, interactive_clap_derive::ToCliArgs)]
+                #[derive(Debug, Default, Clone, clap::Parser, interactive_clap_derive::ToCliArgs)]
                 #[clap(
                     setting(clap::AppSettings::ColoredHelp),
                     setting(clap::AppSettings::DisableHelpSubcommand),
@@ -206,11 +206,11 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                     #(#vec_fn_input_arg)*
 
                     fn try_parse() -> Result<#cli_name, clap::Error> {
-                        <#cli_name as clap::Clap>::try_parse()
+                        <#cli_name as clap::Parser>::try_parse()
                     }
 
                     fn parse() -> #cli_name {
-                        <#cli_name as clap::Clap>::parse()
+                        <#cli_name as clap::Parser>::parse()
                     }
                 }
 
@@ -317,7 +317,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 self::methods::from_cli_for_enum::from_cli_for_enum(ast, variants);
 
             let gen = quote! {
-                #[derive(Debug, Clone, clap::Clap, interactive_clap_derive::ToCliArgs)]
+                #[derive(Debug, Clone, clap::Parser, interactive_clap_derive::ToCliArgs)]
                 pub enum #cli_name {
                     #( #enum_variants, )*
                 }
@@ -341,11 +341,11 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                     #fn_from_cli_for_enum
 
                     fn try_parse() -> Result<#cli_name, clap::Error> {
-                        <#cli_name as clap::Clap>::try_parse()
+                        <#cli_name as clap::Parser>::try_parse()
                     }
 
                     fn parse() -> #cli_name {
-                        <#cli_name as clap::Clap>::parse()
+                        <#cli_name as clap::Parser>::parse()
                     }
                 }
             };
