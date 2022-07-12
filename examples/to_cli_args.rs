@@ -19,7 +19,7 @@ struct OnlineArgs {
     submit: Submit,
 }
 
-#[derive(Debug, EnumDiscriminants, Clone, clap::Clap, interactive_clap_derive::ToCliArgs)]
+#[derive(Debug, EnumDiscriminants, Clone, clap::Parser, interactive_clap_derive::ToCliArgs)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Submit {
     #[strum_discriminants(strum(message = "I want to send the transaction to the network"))]
