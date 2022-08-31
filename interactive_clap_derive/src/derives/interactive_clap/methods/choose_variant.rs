@@ -102,13 +102,13 @@ pub fn fn_choose_variant(
                                 cli_variant = quote! {
                                     use dialoguer::{theme::ColorfulTheme, Select};
                                     use strum::{EnumMessage, IntoEnumIterator};
-                                    fn prompt_variant<T>(prompt: &str) -> T
+                                    fn prompt_variant<T>(prompt: &str) -> Option<T>
                                     where
                                     T: IntoEnumIterator + EnumMessage,
                                     T: Copy + Clone,
                                     {
                                         let variants = T::iter().collect::<Vec<_>>();
-                                        let actions = variants
+                                        let mut actions = variants
                                         .iter()
                                         .map(|p| {
                                             p.get_message()
@@ -116,6 +116,7 @@ pub fn fn_choose_variant(
                                             .to_owned()
                                         })
                                         .collect::<Vec<_>>();
+                                        actions.push("back".to_string());
 
                                         let selected = Select::with_theme(&ColorfulTheme::default())
                                         .with_prompt(prompt)
@@ -124,9 +125,14 @@ pub fn fn_choose_variant(
                                         .interact()
                                         .unwrap();
 
-                                        variants[selected]
-                                    }
-                                    let cli_variant = match prompt_variant(#literal.to_string().as_str()) {
+                                        variants.get(selected).cloned()
+                                    };
+                                    let variant = if let Some(variant) = prompt_variant(#literal.to_string().as_str()) {
+                                        variant
+                                    } else {
+                                        return Ok(None);
+                                    };
+                                    let cli_variant = match variant {
                                         #( #enum_variants, )*
                                     };
                                 };
@@ -141,9 +147,13 @@ pub fn fn_choose_variant(
     let input_context = interactive_clap_attrs_context.get_input_context_dir();
 
     quote! {
-        pub fn choose_variant(context: #input_context) -> color_eyre::eyre::Result<Self> {
-            #cli_variant
-            Ok(Self::from_cli(Some(cli_variant), context.clone())?)
+        pub fn choose_variant(context: #input_context) -> color_eyre::eyre::Result<Option<Self>> {
+            loop {
+                #cli_variant
+                if let Some(variant) = Self::from_cli(Some(cli_variant), context.clone())? {
+                    return Ok(Some(variant));
+                }
+            }
         }
     }
 }

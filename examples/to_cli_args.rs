@@ -33,32 +33,34 @@ pub enum Submit {
 impl Submit {
     fn choose_variant(
         connection_config: common::ConnectionConfig,
-    ) -> color_eyre::eyre::Result<Self> {
+    ) -> color_eyre::eyre::Result<Option<Self>> {
         let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
-        let submits = variants
+        let mut submits = variants
             .iter()
             .map(|p| p.get_message().unwrap().to_owned())
             .collect::<Vec<_>>();
+        submits.push("back".to_string());
         let select_submit = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("How would you like to proceed")
             .items(&submits)
             .default(0)
             .interact()
             .unwrap();
-        match variants[select_submit] {
-            SubmitDiscriminants::Send => Ok(Submit::Send),
-            SubmitDiscriminants::Display => Ok(Submit::Display),
+        match variants.get(select_submit) {
+            Some(SubmitDiscriminants::Send) => Ok(Some(Submit::Send)),
+            Some(SubmitDiscriminants::Display) => Ok(Some(Submit::Display)),
+            None => Ok(None),
         }
     }
 
     fn from_cli(
         optional_clap_variant: Option<<Submit as interactive_clap::ToCli>::CliVariant>,
         context: common::ConnectionConfig,
-    ) -> color_eyre::eyre::Result<Self> {
+    ) -> color_eyre::eyre::Result<Option<Self>> {
         let submit: Option<Submit> = optional_clap_variant.clone();
         match submit {
-            Some(submit) => Ok(submit),
-            None => Ok(Submit::Display),
+            Some(submit) => Ok(Some(submit)),
+            None => Ok(Some(Submit::Display)),
         }
     }
 }
@@ -70,7 +72,13 @@ impl interactive_clap::ToCli for Submit {
 fn main() {
     let mut cli_online_args = OnlineArgs::parse();
     let context = common::ConnectionConfig::Testnet; //#[interactive_clap(context = common::ConnectionConfig)]
-    let online_args = OnlineArgs::from_cli(Some(cli_online_args), context).unwrap();
+    let online_args = loop {
+        if let Some(args) =
+            OnlineArgs::from_cli(Some(cli_online_args.clone()), context.clone()).unwrap()
+        {
+            break args;
+        }
+    };
     cli_online_args = online_args.into();
     let completed_cli = cli_online_args.to_cli_args();
     println!(
