@@ -84,12 +84,12 @@ pub fn from_cli_for_struct(
         pub fn from_cli(
             optional_clap_variant: Option<#cli_name>,
             context: #input_context_dir,
-        ) -> color_eyre::eyre::Result<Self> {
+        ) -> color_eyre::eyre::Result<Option<Self>> {
             #(#fields_value)*
             #new_context_scope
             #field_value_named_arg
-            #field_value_subcommand
-            Ok(Self{ #(#struct_fields,)* })
+            #field_value_subcommand;
+            Ok(Some(Self{ #(#struct_fields,)* }))
         }
     }
 }
@@ -162,6 +162,11 @@ fn field_value_named_arg(
                             }),
                             new_context.into(),
                         )?;
+                        let #ident_field = if let Some(value) = #ident_field {
+                            value
+                        } else {
+                            return Ok(None);
+                        }
                     }
                 },
                 None => quote! {
@@ -172,6 +177,11 @@ fn field_value_named_arg(
                         }),
                         context.into(),
                     )?;
+                    let #ident_field = if let Some(value) = #ident_field {
+                        value
+                    } else {
+                        return Ok(None);
+                    }
                 }
             }
         })
@@ -218,6 +228,11 @@ fn field_value_subcommand(
                             Some(cli_arg) => #ty::from_cli(Some(cli_arg), new_context.into())?,
                             None => #ty::choose_variant(new_context.into())?,
                         };
+                        let #ident_field = if let Some(value) = #ident_field {
+                            value
+                        } else {
+                            return Ok(None);
+                        }
                     }
                 },
                 None => quote! {
@@ -225,6 +240,11 @@ fn field_value_subcommand(
                         Some(cli_arg) => #ty::from_cli(Some(cli_arg), context)?,
                         None => #ty::choose_variant(context.into())?,
                     };
+                    let #ident_field = if let Some(value) = #ident_field {
+                        value
+                    } else {
+                        return Ok(None);
+                    }
                 }
             }
         })

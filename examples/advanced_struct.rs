@@ -26,7 +26,7 @@ impl Args {
     pub fn from_cli(
         optional_clap_variant: Option<CliArgs>,
         context: (),
-    ) -> color_eyre::eyre::Result<Self> {
+    ) -> color_eyre::eyre::Result<Option<Self>> {
         let age = Self::from_cli_age(
             optional_clap_variant
                 .clone()
@@ -50,11 +50,11 @@ impl Args {
             first_name,
             second_name,
         };
-        Ok(Self {
+        Ok(Some(Self {
             age: new_context_scope.age,
             first_name: new_context_scope.first_name,
             second_name: new_context_scope.second_name,
-        })
+        }))
     }
 
     fn input_age(_context: &()) -> color_eyre::eyre::Result<u64> {

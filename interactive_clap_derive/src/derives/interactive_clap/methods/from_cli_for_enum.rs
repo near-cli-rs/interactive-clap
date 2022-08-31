@@ -28,21 +28,33 @@ pub fn from_cli_for_enum(
 
                 match &interactive_clap_attrs_context.output_context_dir {
                     Some(_) => quote! {
-                        Some(#cli_name::#variant_ident(args)) => {
+                        Some(#cli_name::#variant_ident(inner_cli_args)) => {
                             type Alias = <#name as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope;
                             let new_context_scope = Alias::#variant_ident;
-                            let new_context = #context_name::from_previous_context((), &new_context_scope);
-                            Ok(Self::#variant_ident(#ty::from_cli(Some(args), new_context.into())?,))
+                            let new_context = #context_name::from_previous_context(context.clone(), &new_context_scope);
+                            let optional_inner_args = #ty::from_cli(Some(inner_cli_args), new_context.into())?;
+                            if let Some(inner_args) = optional_inner_args {
+                                Ok(Some(Self::#variant_ident(inner_args,)))
+                            } else {
+                                Self::choose_variant(context.clone())
+                            }
                         }
                     },
                     None => quote! {
-                        Some(#cli_name::#variant_ident(args)) => Ok(Self::#variant_ident(#ty::from_cli(Some(args), context.clone())?,)),
+                        Some(#cli_name::#variant_ident(inner_cli_args)) => {
+                            let optional_inner_args = #ty::from_cli(Some(inner_cli_args), context.clone())?;
+                            if let Some(inner_args) = optional_inner_args {
+                                Ok(Some(Self::#variant_ident(inner_args,)))
+                            } else {
+                                Self::choose_variant(context.clone())
+                            }
+                        }
                     }
                 }
             },
             syn::Fields::Unit => {
                 quote! {
-                    Some(#cli_name::#variant_ident) => Ok(Self::#variant_ident),
+                    Some(#cli_name::#variant_ident) => Ok(Some(Self::#variant_ident)),
                 }
             },
             _ => abort_call_site!("Only option `Fields::Unnamed` or `Fields::Unit` is needed")
@@ -57,7 +69,7 @@ pub fn from_cli_for_enum(
         pub fn from_cli(
             optional_clap_variant: Option<#cli_name>,
             context: #input_context_dir,
-        ) -> color_eyre::eyre::Result<Self> {
+        ) -> color_eyre::eyre::Result<Option<Self>> {
             match optional_clap_variant {
                 #(#from_cli_variants)*
                 None => Self::choose_variant(context.clone()),
