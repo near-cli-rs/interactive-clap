@@ -13,20 +13,10 @@ edition = "2018"
 [dependencies]
 interactive_clap_derive = { path = "interactive_clap_derive" }
 
-near-ledger = { version = "0.1.1", optional = true }
-
-[features]
-default = ["ledger"]
-ledger = ["near-ledger"]
-
 [dev-dependencies]
 shell-words = "1.0.0"
 
-# clap = "=3.0.0-beta.2"
-# clap_derive = "=3.0.0-beta.2"
-# clap_generate = "=3.0.0-beta.2"
 clap = { version = "3.1.17", features = ["derive"] }
-
 
 strum = { git = "https://github.com/frol/strum", branch = "feat/discriminants-pass-through-attributes", features = ["derive"] }
 strum_macros = "0.20"
