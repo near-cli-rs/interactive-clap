@@ -47,6 +47,12 @@ impl InteractiveClapAttrsCliField {
                                                     .map(|subcommand| subcommand.to_cli_args())
                                                     .unwrap_or_default();
                                                 };
+                                            } else if "arg_enum".to_string() == ident.to_string() {
+                                                args_without_attrs = quote! {
+                                                    if let Some(arg) = &self.#ident_field {
+                                                        args.push_front(arg.to_string())
+                                                    }
+                                                };
                                             } else if "long".to_string() == ident.to_string() {
                                                 let ident_field_to_kebab_case_string =
                                                     crate::helpers::to_kebab_case::to_kebab_case(
