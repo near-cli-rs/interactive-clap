@@ -47,7 +47,7 @@ impl InteractiveClapAttrsCliField {
                                                     .map(|subcommand| subcommand.to_cli_args())
                                                     .unwrap_or_default();
                                                 };
-                                            } else if "arg_enum".to_string() == ident.to_string() {
+                                            } else if "value_enum".to_string() == ident.to_string() {
                                                 args_without_attrs = quote! {
                                                     if let Some(arg) = &self.#ident_field {
                                                         args.push_front(arg.to_string())

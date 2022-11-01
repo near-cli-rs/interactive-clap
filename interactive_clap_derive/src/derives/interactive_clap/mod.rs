@@ -39,7 +39,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                                 match attr_token {
                                     proc_macro2::TokenTree::Group(group) => {
                                         if group.stream().to_string().contains("subcommand")
-                                            | group.stream().to_string().contains("arg_enum")
+                                            | group.stream().to_string().contains("value_enum")
                                             | group.stream().to_string().contains("long")
                                             | (group.stream().to_string() == "skip".to_string())
                                         {

@@ -16,7 +16,7 @@ interactive_clap_derive = { path = "interactive_clap_derive" }
 [dev-dependencies]
 shell-words = "1.0.0"
 
-clap = { version = "3.1.17", features = ["derive"] }
+clap = { version = "4.0.18", features = ["derive"] }
 
 strum = { git = "https://github.com/frol/strum", branch = "feat/discriminants-pass-through-attributes", features = ["derive"] }
 strum_macros = "0.20"
