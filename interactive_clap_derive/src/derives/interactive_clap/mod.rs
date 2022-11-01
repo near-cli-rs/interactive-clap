@@ -186,11 +186,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
 
             let gen = quote! {
                 #[derive(Debug, Default, Clone, clap::Parser, interactive_clap_derive::ToCliArgs)]
-                #[clap(
-                    setting(clap::AppSettings::ColoredHelp),
-                    setting(clap::AppSettings::DisableHelpSubcommand),
-                    // setting(clap::AppSettings::VersionlessSubcommands)
-                )]
+                #[clap(author, version, about, long_about = None)]
                 pub struct #cli_name {
                     #( #cli_fields, )*
                 }
