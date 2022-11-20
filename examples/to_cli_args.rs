@@ -10,6 +10,8 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
+use interactive_clap::ToCliArgs;
+
 mod common;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
@@ -30,9 +32,25 @@ pub enum Submit {
     Display,
 }
 
+impl interactive_clap::FromCli for Submit {
+    type FromCliContext = common::ConnectionConfig;
+    type FromCliError = color_eyre::eyre::Error;
+
+    fn from_cli(
+        optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+        _context: Self::FromCliContext,
+    ) -> Result<Option<Self>, Self::FromCliError> where Self: Sized + interactive_clap::ToCli {
+        let submit: Option<Submit> = optional_clap_variant.clone();
+        match submit {
+            Some(submit) => Ok(Some(submit)),
+            None => Ok(Some(Submit::Display)),
+        }
+    }
+}
+
 impl Submit {
     fn choose_variant(
-        connection_config: common::ConnectionConfig,
+        _context: common::ConnectionConfig,
     ) -> color_eyre::eyre::Result<Option<Self>> {
         let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
         let mut submits = variants
@@ -52,17 +70,6 @@ impl Submit {
             None => Ok(None),
         }
     }
-
-    fn from_cli(
-        optional_clap_variant: Option<<Submit as interactive_clap::ToCli>::CliVariant>,
-        context: common::ConnectionConfig,
-    ) -> color_eyre::eyre::Result<Option<Self>> {
-        let submit: Option<Submit> = optional_clap_variant.clone();
-        match submit {
-            Some(submit) => Ok(Some(submit)),
-            None => Ok(Some(Submit::Display)),
-        }
-    }
 }
 
 impl interactive_clap::ToCli for Submit {
@@ -74,7 +81,7 @@ fn main() {
     let context = common::ConnectionConfig::Testnet; //#[interactive_clap(context = common::ConnectionConfig)]
     let online_args = loop {
         if let Some(args) =
-            OnlineArgs::from_cli(Some(cli_online_args.clone()), context.clone()).unwrap()
+            <OnlineArgs as interactive_clap::FromCli>::from_cli(Some(cli_online_args.clone()), context.clone()).unwrap()
         {
             break args;
         }

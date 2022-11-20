@@ -18,6 +18,6 @@ pub struct OperationMode {
 fn main() {
     let cli_operation_mode = OperationMode::parse();
     let context = (); // default: input_context = ()
-    let operation_mode = OperationMode::from_cli(Some(cli_operation_mode), context);
+    let operation_mode = <OperationMode as interactive_clap::FromCli>::from_cli(Some(cli_operation_mode), context);
     println!("operation_mode: {:?}", &operation_mode);
 }

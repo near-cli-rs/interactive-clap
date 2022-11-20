@@ -2,7 +2,7 @@ extern crate proc_macro;
 
 use proc_macro2::Span;
 use proc_macro_error::abort_call_site;
-use quote::{__private::ext::RepToTokensExt, quote};
+use quote::quote;
 use syn;
 
 pub fn vec_fn_input_arg(

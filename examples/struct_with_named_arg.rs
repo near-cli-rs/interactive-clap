@@ -7,7 +7,6 @@
 //                    ./struct_with_named_arg account QWERTY => account: Ok(Account { account: Sender { sender_account_id: "QWERTY" } })
 // To learn more about the parameters, use "help" flag: ./struct_with_named_arg --help
 
-use clap::Parser;
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 struct Account {
     #[interactive_clap(named_arg)]
@@ -24,6 +23,6 @@ pub struct Sender {
 fn main() {
     let cli_account = Account::parse();
     let context = (); // default: input_context = ()
-    let account = Account::from_cli(Some(cli_account), context);
+    let account = <Account as interactive_clap::FromCli>::from_cli(Some(cli_account), context);
     println!("account: {:?}", account)
 }

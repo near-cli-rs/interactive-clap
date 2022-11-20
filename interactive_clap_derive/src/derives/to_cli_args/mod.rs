@@ -41,8 +41,8 @@ pub fn impl_to_cli_args(ast: &syn::DeriveInput) -> TokenStream {
             let args_push_front_vec = args_push_front_vec.into_iter().rev();
 
             let gen = quote! {
-                impl #cli_name {
-                    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+                impl interactive_clap::ToCliArgs for #cli_name {
+                    fn to_cli_args(&self) -> std::collections::VecDeque<String> {
                         #args_subcommand;
                         #(#args_push_front_vec; )*
                         args
@@ -83,8 +83,8 @@ pub fn impl_to_cli_args(ast: &syn::DeriveInput) -> TokenStream {
                 }
             });
             let gen = quote! {
-                impl #cli_name {
-                    pub fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+                impl interactive_clap::ToCliArgs for #cli_name {
+                    fn to_cli_args(&self) -> std::collections::VecDeque<String> {
                         match self {
                             #( #enum_variants, )*
                         }

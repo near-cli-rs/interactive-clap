@@ -1,7 +1,6 @@
 extern crate proc_macro;
 
 use proc_macro_error::abort_call_site;
-use quote::quote;
 use syn;
 
 pub fn is_field_without_subcommand(field: &syn::Field) -> bool {
@@ -29,7 +28,7 @@ pub fn is_field_without_subcommand(field: &syn::Field) -> bool {
         })
         .next()
     {
-        Some(token_stream) => false,
+        Some(_token_stream) => false,
         None => true,
     }
 }
