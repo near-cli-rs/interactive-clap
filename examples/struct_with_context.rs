@@ -17,14 +17,19 @@ pub struct OfflineArgs {
     account: Sender,
 }
 
-pub struct OfflineArgsContext {}
+#[derive(Debug)]
+pub struct OfflineArgsContext {
+    pub some_context_field: i64,
+}
 
 impl OfflineArgsContext {
     fn from_previous_context(
         _previous_context: (),
         _scope: &<OfflineArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> Self {
-        Self {}
+        Self {
+            some_context_field: 42,
+        }
     }
 }
 
@@ -49,6 +54,7 @@ pub struct Sender {
 
 impl Sender {
     fn input_sender_account_id(context: &OfflineArgsContext) -> color_eyre::eyre::Result<String> {
+        println!("Let's use context: {:?}", context);
         Ok(dialoguer::Input::new()
             .with_prompt("What is the account ID?")
             .interact_text()?)
@@ -58,6 +64,6 @@ impl Sender {
 fn main() {
     let cli_offline_args = OfflineArgs::parse();
     let context = (); // #[interactive_clap(input_context = ())]
-    let offline_args = OfflineArgs::from_cli(Some(cli_offline_args), context);
+    let offline_args = <OfflineArgs as interactive_clap::FromCli>::from_cli(Some(cli_offline_args), context);
     println!("offline_args: {:?}", offline_args)
 }

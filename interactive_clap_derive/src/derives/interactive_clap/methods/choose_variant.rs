@@ -160,7 +160,7 @@ pub fn fn_choose_variant(
         pub fn choose_variant(context: #input_context) -> color_eyre::eyre::Result<Option<Self>> {
             loop {
                 #cli_variant
-                if let Some(variant) = Self::from_cli(Some(cli_variant), context.clone())? {
+                if let Some(variant) = <Self as interactive_clap::FromCli>::from_cli(Some(cli_variant), context.clone())? {
                     return Ok(Some(variant));
                 }
             }

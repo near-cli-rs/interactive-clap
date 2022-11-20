@@ -6,14 +6,6 @@
 
 pub use interactive_clap_derive::{InteractiveClap, ToCliArgs};
 
-// pub trait InteractiveClap {
-//     fn interactive_clap();
-// }
-
-// pub trait ToCliArgs {
-//     fn to_cli_args();
-// }
-
 pub trait ToCli {
     type CliVariant;
 }
@@ -32,4 +24,17 @@ impl ToCli for u64 {
 
 pub trait ToInteractiveClapContextScope {
     type InteractiveClapContextScope;
+}
+
+pub trait ToCliArgs {
+    fn to_cli_args(&self) -> std::collections::VecDeque<String>;
+}
+
+pub trait FromCli {
+    type FromCliContext;
+    type FromCliError;
+    fn from_cli(
+        optional_clap_variant: Option<<Self as ToCli>::CliVariant>,
+        context: Self::FromCliContext,
+    ) -> Result<Option<Self>, Self::FromCliError> where Self: Sized + ToCli;
 }

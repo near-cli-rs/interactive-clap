@@ -10,7 +10,6 @@ pub fn from_cli_for_struct(
     fields: &syn::Fields,
 ) -> proc_macro2::TokenStream {
     let name = &ast.ident;
-    let cli_name = syn::Ident::new(&format!("Cli{}", name), Span::call_site());
 
     let interactive_clap_attrs_context =
         super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(&ast);
@@ -81,15 +80,19 @@ pub fn from_cli_for_struct(
     };
 
     quote! {
-        pub fn from_cli(
-            optional_clap_variant: Option<#cli_name>,
-            context: #input_context_dir,
-        ) -> color_eyre::eyre::Result<Option<Self>> {
-            #(#fields_value)*
-            #new_context_scope
-            #field_value_named_arg
-            #field_value_subcommand;
-            Ok(Some(Self{ #(#struct_fields,)* }))
+        impl interactive_clap::FromCli for #name {
+            type FromCliContext = #input_context_dir;
+            type FromCliError = color_eyre::eyre::Error;
+            fn from_cli(
+                optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+                context: Self::FromCliContext,
+            ) -> Result<Option<Self>, Self::FromCliError> where Self: Sized + interactive_clap::ToCli {
+                #(#fields_value)*
+                #new_context_scope
+                #field_value_named_arg
+                #field_value_subcommand;
+                Ok(Some(Self{ #(#struct_fields,)* }))
+            }
         }
     }
 }
@@ -155,7 +158,7 @@ fn field_value_named_arg(
                     let context_for_struct = syn::Ident::new(&format!("{}Context", &name), Span::call_site());
                     quote! {
                         let new_context = #context_for_struct::from_previous_context(context, &new_context_scope);
-                        let #ident_field = #ty::from_cli(
+                        let #ident_field = <#ty as interactive_clap::FromCli>::from_cli(
                             optional_clap_variant.and_then(|clap_variant| match clap_variant.#ident_field {
                                 Some(#enum_for_clap_named_arg::#variant_name(cli_arg)) => Some(cli_arg),
                                 None => None,
@@ -170,7 +173,7 @@ fn field_value_named_arg(
                     }
                 },
                 None => quote! {
-                    let #ident_field = #ty::from_cli(
+                    let #ident_field = <#ty as interactive_clap::FromCli>::from_cli(
                         optional_clap_variant.and_then(|clap_variant| match clap_variant.#ident_field {
                             Some(#enum_for_clap_named_arg::#variant_name(cli_sender)) => Some(cli_sender),
                             None => None,
@@ -225,7 +228,7 @@ fn field_value_subcommand(
                     quote! {
                         let new_context = #context_for_struct::from_previous_context(context, &new_context_scope);
                         let #ident_field = match optional_clap_variant.and_then(|clap_variant| clap_variant.#ident_field) {
-                            Some(cli_arg) => #ty::from_cli(Some(cli_arg), new_context.into())?,
+                            Some(cli_arg) => <#ty as interactive_clap::FromCli>::from_cli(Some(cli_arg), new_context.into())?,
                             None => #ty::choose_variant(new_context.into())?,
                         };
                         let #ident_field = if let Some(value) = #ident_field {
@@ -237,7 +240,7 @@ fn field_value_subcommand(
                 },
                 None => quote! {
                     let #ident_field = match optional_clap_variant.and_then(|clap_variant| clap_variant.#ident_field) {
-                        Some(cli_arg) => #ty::from_cli(Some(cli_arg), context)?,
+                        Some(cli_arg) => <#ty as interactive_clap::FromCli>::from_cli(Some(cli_arg), context)?,
                         None => #ty::choose_variant(context.into())?,
                     };
                     let #ident_field = if let Some(value) = #ident_field {

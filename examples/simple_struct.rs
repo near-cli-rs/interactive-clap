@@ -16,6 +16,6 @@ struct Args {
 fn main() {
     let cli_args = Args::parse();
     let context = (); // default: input_context = ()
-    let args = Args::from_cli(Some(cli_args), context);
+    let args = <Args as interactive_clap::FromCli>::from_cli(Some(cli_args), context);
     println!("args: {:?}", args)
 }

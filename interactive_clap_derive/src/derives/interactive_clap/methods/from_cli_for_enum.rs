@@ -32,7 +32,7 @@ pub fn from_cli_for_enum(
                             type Alias = <#name as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope;
                             let new_context_scope = Alias::#variant_ident;
                             let new_context = #context_name::from_previous_context(context.clone(), &new_context_scope);
-                            let optional_inner_args = #ty::from_cli(Some(inner_cli_args), new_context.into())?;
+                            let optional_inner_args = <#ty as interactive_clap::FromCli>::from_cli(Some(inner_cli_args), new_context.into())?;
                             if let Some(inner_args) = optional_inner_args {
                                 Ok(Some(Self::#variant_ident(inner_args,)))
                             } else {
@@ -42,7 +42,7 @@ pub fn from_cli_for_enum(
                     },
                     None => quote! {
                         Some(#cli_name::#variant_ident(inner_cli_args)) => {
-                            let optional_inner_args = #ty::from_cli(Some(inner_cli_args), context.clone())?;
+                            let optional_inner_args = <#ty as interactive_clap::FromCli>::from_cli(Some(inner_cli_args), context.clone().into())?;
                             if let Some(inner_args) = optional_inner_args {
                                 Ok(Some(Self::#variant_ident(inner_args,)))
                             } else {
@@ -66,13 +66,17 @@ pub fn from_cli_for_enum(
         .get_input_context_dir();
 
     quote! {
-        pub fn from_cli(
-            optional_clap_variant: Option<#cli_name>,
-            context: #input_context_dir,
-        ) -> color_eyre::eyre::Result<Option<Self>> {
-            match optional_clap_variant {
-                #(#from_cli_variants)*
-                None => Self::choose_variant(context.clone()),
+        impl interactive_clap::FromCli for #name {
+            type FromCliContext = #input_context_dir;
+            type FromCliError = color_eyre::eyre::Error;
+            fn from_cli(
+                optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+                context: Self::FromCliContext,
+            ) -> Result<Option<Self>, Self::FromCliError> where Self: Sized + interactive_clap::ToCli {
+                match optional_clap_variant {
+                    #(#from_cli_variants)*
+                    None => Self::choose_variant(context.clone()),
+                }
             }
         }
     }

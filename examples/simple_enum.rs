@@ -7,8 +7,7 @@
 //                    ./simple_enum offline              => mode: Ok(Offline)
 // To learn more about the parameters, use "help" flag: ./simple_enum --help
 
-use dialoguer::{theme::ColorfulTheme, Select};
-use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap_derive::InteractiveClap)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
@@ -28,6 +27,6 @@ pub enum Mode {
 fn main() {
     let cli_mode = Mode::try_parse().ok();
     let context = (); // default: input_context = ()
-    let mode = Mode::from_cli(cli_mode, context);
+    let mode = <Mode as interactive_clap::FromCli>::from_cli(cli_mode, context);
     println!("mode: {:?}", mode)
 }

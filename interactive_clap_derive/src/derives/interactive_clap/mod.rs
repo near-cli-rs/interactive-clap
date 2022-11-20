@@ -197,9 +197,10 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
 
                 #context_scope_for_struct
 
+                #fn_from_cli_for_struct
+
                 impl #name {
                     #(#fn_get_arg)*
-                    #fn_from_cli_for_struct
                     #(#vec_fn_input_arg)*
 
                     fn try_parse() -> Result<#cli_name, clap::Error> {
@@ -333,9 +334,10 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                     }
                 }
 
+                #fn_from_cli_for_enum
+
                 impl #name {
                     #fn_choose_variant
-                    #fn_from_cli_for_enum
 
                     fn try_parse() -> Result<#cli_name, clap::Error> {
                         <#cli_name as clap::Parser>::try_parse()
