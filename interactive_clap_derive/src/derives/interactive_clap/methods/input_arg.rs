@@ -1,7 +1,6 @@
 extern crate proc_macro;
 
 use proc_macro2::Span;
-use proc_macro_error::abort_call_site;
 use quote::quote;
 use syn;
 
@@ -10,7 +9,7 @@ pub fn vec_fn_input_arg(
     fields: &syn::Fields,
 ) -> Vec<proc_macro2::TokenStream> {
     let interactive_clap_attrs_context =
-        super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(&ast);
+        super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(ast);
     let vec_fn_input_arg = fields
         .iter()
         .filter(|field| super::fields_without_subcommand::is_field_without_subcommand(field))
@@ -46,15 +45,12 @@ pub fn vec_fn_input_arg(
             let doc_attrs = field
                 .attrs
                 .iter()
-                .filter(|attr| attr.path.is_ident("doc".into()))
+                .filter(|attr| attr.path.is_ident("doc"))
                 .map(|attr| {
                     let mut literal_string = String::new();
                     for attr_token in attr.tokens.clone() {
-                        match attr_token {
-                            proc_macro2::TokenTree::Literal(literal) => {
-                                literal_string = literal.to_string();
-                            }
-                            _ => (), //abort_call_site!("Only option `TokenTree::Literal` is needed")
+                        if let proc_macro2::TokenTree::Literal(literal) = attr_token {
+                            literal_string = literal.to_string();
                         }
                     }
                     literal_string
@@ -62,7 +58,7 @@ pub fn vec_fn_input_arg(
                 .collect::<Vec<_>>();
             let literal_vec = doc_attrs
                 .iter()
-                .map(|s| s.replace("\"", ""))
+                .map(|s| s.replace('\"', ""))
                 .collect::<Vec<_>>();
             let literal = proc_macro2::Literal::string(literal_vec.join("\n  ").as_str());
 

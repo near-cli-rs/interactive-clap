@@ -11,7 +11,7 @@ pub fn fn_choose_variant(
 ) -> proc_macro2::TokenStream {
     let name = &ast.ident;
     let interactive_clap_attrs_context =
-        super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(&ast);
+        super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(ast);
     let command_discriminants =
         syn::Ident::new(&format!("{}Discriminants", name), Span::call_site());
     let cli_command = syn::Ident::new(&format!("Cli{}", name), Span::call_site());
@@ -23,34 +23,27 @@ pub fn fn_choose_variant(
 
     if !ast.attrs.is_empty() {
         for attr in ast.attrs.clone() {
-            if attr.path.is_ident("interactive_clap".into()) {
+            if attr.path.is_ident("interactive_clap") {
                 for attr_token in attr.tokens.clone() {
-                    match attr_token {
-                        proc_macro2::TokenTree::Group(group) => {
-                            if group
-                                .stream()
-                                .to_string()
-                                .contains("disable_strum_discriminants")
-                                .clone()
-                            {
-                                ast_attrs.push("disable_strum_discriminants");
-                            } else if group.stream().to_string().contains("disable_back").clone() {
-                                ast_attrs.push("disable_back");
-                            };
-                        }
-                        _ => (), //abort_call_site!("Only option `TokenTree::Group` is needed")
+                    if let proc_macro2::TokenTree::Group(group) = attr_token {
+                        if group
+                            .stream()
+                            .to_string()
+                            .contains("disable_strum_discriminants")
+                        {
+                            ast_attrs.push("disable_strum_discriminants");
+                        } else if group.stream().to_string().contains("disable_back") {
+                            ast_attrs.push("disable_back");
+                        };
                     }
                 }
             };
-            if attr.path.is_ident("strum_discriminants".into()) {
+            if attr.path.is_ident("strum_discriminants") {
                 for attr_token in attr.tokens.clone() {
-                    match attr_token {
-                        proc_macro2::TokenTree::Group(group) => {
-                            if &group.stream().to_string() == "derive(EnumMessage, EnumIter)" {
-                                ast_attrs.push("strum_discriminants");
-                            };
-                        }
-                        _ => (), //abort_call_site!("Only option `TokenTree::Group` is needed")
+                    if let proc_macro2::TokenTree::Group(group) = attr_token {
+                        if &group.stream().to_string() == "derive(EnumMessage, EnumIter)" {
+                            ast_attrs.push("strum_discriminants");
+                        };
                     }
                 }
             };
@@ -77,15 +70,12 @@ pub fn fn_choose_variant(
                 let doc_attrs = ast
                     .attrs
                     .iter()
-                    .filter(|attr| attr.path.is_ident("doc".into()))
+                    .filter(|attr| attr.path.is_ident("doc"))
                     .map(|attr| {
                         let mut literal_string = String::new();
                         for attr_token in attr.tokens.clone() {
-                            match attr_token {
-                                proc_macro2::TokenTree::Literal(literal) => {
-                                    literal_string = literal.to_string();
-                                }
-                                _ => (), //abort_call_site!("Only option `TokenTree::Literal` is needed")
+                            if let proc_macro2::TokenTree::Literal(literal) = attr_token {
+                                literal_string = literal.to_string();
                             }
                         }
                         literal_string
@@ -93,7 +83,7 @@ pub fn fn_choose_variant(
                     .collect::<Vec<_>>();
                 let literal_vec = doc_attrs
                     .iter()
-                    .map(|s| s.replace("\"", ""))
+                    .map(|s| s.replace('\"', ""))
                     .collect::<Vec<_>>();
                 let literal = proc_macro2::Literal::string(literal_vec.join("\n  ").as_str());
 

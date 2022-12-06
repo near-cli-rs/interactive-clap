@@ -6,5 +6,5 @@ pub fn to_kebab_case(s: String) -> String {
         }
         snake.push(ch.to_ascii_lowercase());
     }
-    snake.as_str().replace("_", "-")
+    snake.as_str().replace('_', "-")
 }

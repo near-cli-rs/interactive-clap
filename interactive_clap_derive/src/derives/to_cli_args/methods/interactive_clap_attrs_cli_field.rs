@@ -32,14 +32,14 @@ impl InteractiveClapAttrsCliField {
             };
         } else {
             for attr in &field.attrs {
-                if attr.path.is_ident("clap".into()) {
+                if attr.path.is_ident("clap") {
                     for attr_token in attr.tokens.clone() {
                         match attr_token {
                             proc_macro2::TokenTree::Group(group) => {
                                 for item in group.stream() {
                                     match &item {
                                         proc_macro2::TokenTree::Ident(ident) => {
-                                            if "subcommand".to_string() == ident.to_string() {
+                                            if *ident == *"subcommand" {
                                                 subcommand_args = quote! {
                                                     let mut args = self
                                                     .#ident_field
@@ -47,13 +47,13 @@ impl InteractiveClapAttrsCliField {
                                                     .map(|subcommand| subcommand.to_cli_args())
                                                     .unwrap_or_default();
                                                 };
-                                            } else if "value_enum".to_string() == ident.to_string() {
+                                            } else if *ident == *"value_enum" {
                                                 args_without_attrs = quote! {
                                                     if let Some(arg) = &self.#ident_field {
                                                         args.push_front(arg.to_string())
                                                     }
                                                 };
-                                            } else if "long".to_string() == ident.to_string() {
+                                            } else if *ident == *"long" {
                                                 let ident_field_to_kebab_case_string =
                                                     crate::helpers::to_kebab_case::to_kebab_case(
                                                         ident_field.to_string(),

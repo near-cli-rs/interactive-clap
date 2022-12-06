@@ -39,7 +39,10 @@ impl interactive_clap::FromCli for Submit {
     fn from_cli(
         optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
         _context: Self::FromCliContext,
-    ) -> Result<Option<Self>, Self::FromCliError> where Self: Sized + interactive_clap::ToCli {
+    ) -> Result<Option<Self>, Self::FromCliError>
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
         let submit: Option<Submit> = optional_clap_variant.clone();
         match submit {
             Some(submit) => Ok(Some(submit)),
@@ -80,8 +83,11 @@ fn main() {
     let mut cli_online_args = OnlineArgs::parse();
     let context = common::ConnectionConfig::Testnet; //#[interactive_clap(context = common::ConnectionConfig)]
     let online_args = loop {
-        if let Some(args) =
-            <OnlineArgs as interactive_clap::FromCli>::from_cli(Some(cli_online_args.clone()), context.clone()).unwrap()
+        if let Some(args) = <OnlineArgs as interactive_clap::FromCli>::from_cli(
+            Some(cli_online_args.clone()),
+            context.clone(),
+        )
+        .unwrap()
         {
             break args;
         }

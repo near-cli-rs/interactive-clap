@@ -12,7 +12,7 @@ pub fn from_cli_for_struct(
     let name = &ast.ident;
 
     let interactive_clap_attrs_context =
-        super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(&ast);
+        super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(ast);
     if interactive_clap_attrs_context.is_skip_default_from_cli {
         return quote!();
     };
@@ -28,7 +28,7 @@ pub fn from_cli_for_struct(
 
     let fields_value = fields
         .iter()
-        .map(|field| fields_value(field))
+        .map(fields_value)
         .filter(|token_stream| !token_stream.is_empty());
 
     let field_value_named_arg = if let Some(token_stream) = fields
@@ -40,8 +40,7 @@ pub fn from_cli_for_struct(
                 &interactive_clap_attrs_context.output_context_dir,
             )
         })
-        .filter(|token_stream| !token_stream.is_empty())
-        .next()
+        .find(|token_stream| !token_stream.is_empty())
     {
         token_stream
     } else {
@@ -57,8 +56,7 @@ pub fn from_cli_for_struct(
                 &interactive_clap_attrs_context.output_context_dir,
             )
         })
-        .filter(|token_stream| !token_stream.is_empty())
-        .next()
+        .find(|token_stream| !token_stream.is_empty())
     {
         token_stream
     } else {
@@ -125,18 +123,11 @@ fn field_value_named_arg(
         quote!()
     } else {
         match field.attrs.iter()
-        .filter(|attr| attr.path.is_ident("interactive_clap".into()))
-        .map(|attr| attr.tokens.clone())
-        .flatten()
+        .filter(|attr| attr.path.is_ident("interactive_clap"))
+        .flat_map(|attr| attr.tokens.clone())
         .filter(|attr_token| {
             match attr_token {
-                proc_macro2::TokenTree::Group(group) => {
-                    if group.stream().to_string().contains("named_arg") {
-                        true
-                    } else {
-                        false
-                    }
-                },
+                proc_macro2::TokenTree::Group(group) => group.stream().to_string().contains("named_arg"), 
                 _ => abort_call_site!("Only option `TokenTree::Group` is needed")
             }
         })
@@ -206,18 +197,11 @@ fn field_value_subcommand(
         quote!()
     } else {
         match field.attrs.iter()
-        .filter(|attr| attr.path.is_ident("interactive_clap".into()))
-        .map(|attr| attr.tokens.clone())
-        .flatten()
+        .filter(|attr| attr.path.is_ident("interactive_clap"))
+        .flat_map(|attr| attr.tokens.clone())
         .filter(|attr_token| {
             match attr_token {
-                proc_macro2::TokenTree::Group(group) => {
-                    if group.stream().to_string().contains("subcommand") {
-                        true
-                    } else {
-                        false
-                    }
-                },
+                proc_macro2::TokenTree::Group(group) => group.stream().to_string().contains("subcommand"),
                 _ => abort_call_site!("Only option `TokenTree::Group` is needed")
             }
         })
@@ -260,14 +244,14 @@ fn field_value_subcommand(
 
 fn struct_field(
     field: &syn::Field,
-    fields_without_subcommand: &Vec<proc_macro2::TokenStream>,
+    fields_without_subcommand: &[proc_macro2::TokenStream],
 ) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
-    let fields_without_subcommand_to_string = fields_without_subcommand
+    if fields_without_subcommand
         .iter()
         .map(|token_stream| token_stream.to_string())
-        .collect::<Vec<_>>();
-    if fields_without_subcommand_to_string.contains(&ident_field.to_string()) {
+        .any(|x| *ident_field == x)
+    {
         quote! {
             #ident_field: new_context_scope.#ident_field
         }

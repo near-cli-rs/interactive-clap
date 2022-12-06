@@ -13,7 +13,7 @@ pub fn from_cli_for_enum(
     let cli_name = syn::Ident::new(&format!("Cli{}", name), Span::call_site());
 
     let interactive_clap_attrs_context =
-        super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(&ast);
+        super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(ast);
     if interactive_clap_attrs_context.is_skip_default_from_cli {
         return quote!();
     };

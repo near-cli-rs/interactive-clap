@@ -32,16 +32,14 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                     let mut clap_attr_vec: Vec<proc_macro2::TokenStream> = Vec::new();
                     let mut cfg_attr_vec: Vec<proc_macro2::TokenStream> = Vec::new();
                     for attr in &field.attrs {
-                        if attr.path.is_ident("interactive_clap".into())
-                            | attr.path.is_ident("cfg".into())
-                        {
+                        if attr.path.is_ident("interactive_clap") | attr.path.is_ident("cfg") {
                             for attr_token in attr.tokens.clone() {
                                 match attr_token {
                                     proc_macro2::TokenTree::Group(group) => {
                                         if group.stream().to_string().contains("subcommand")
                                             | group.stream().to_string().contains("value_enum")
                                             | group.stream().to_string().contains("long")
-                                            | (group.stream().to_string() == "skip".to_string())
+                                            | (group.stream().to_string() == *"skip")
                                         {
                                             clap_attr_vec.push(group.stream())
                                         } else if group.stream().to_string().contains("named_arg") {
@@ -73,7 +71,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                                         if group.stream().to_string().contains("feature") {
                                             cfg_attr_vec.push(attr.into_token_stream())
                                         };
-                                        if group.stream().to_string() == "skip".to_string() {
+                                        if group.stream().to_string() == *"skip" {
                                             ident_skip_field_vec.push(ident_field.clone());
                                             cli_field = quote!()
                                         };
@@ -112,19 +110,18 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 .filter(|token_stream| !token_stream.is_empty());
 
             let fn_from_cli_for_struct =
-                self::methods::from_cli_for_struct::from_cli_for_struct(&ast, &fields);
+                self::methods::from_cli_for_struct::from_cli_for_struct(ast, &fields);
 
-            let fn_get_arg =
-                self::methods::get_arg_from_cli_for_struct::from_cli_arg(&ast, &fields);
+            let fn_get_arg = self::methods::get_arg_from_cli_for_struct::from_cli_arg(ast, &fields);
 
-            let vec_fn_input_arg = self::methods::input_arg::vec_fn_input_arg(&ast, &fields);
+            let vec_fn_input_arg = self::methods::input_arg::vec_fn_input_arg(ast, &fields);
 
             let context_scope_fields = fields
                 .iter()
-                .map(|field| context_scope_for_struct_field(field))
+                .map(context_scope_for_struct_field)
                 .filter(|token_stream| !token_stream.is_empty())
                 .collect::<Vec<_>>();
-            let context_scope_for_struct = context_scope_for_struct(&name, context_scope_fields);
+            let context_scope_for_struct = context_scope_for_struct(name, context_scope_fields);
 
             let clap_enum_for_named_arg =
                 if let Some(token_stream) = fields.iter().find_map(|field| {
@@ -132,22 +129,15 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                     let variant_name_string = crate::helpers::snake_case_to_camel_case::snake_case_to_camel_case(ident_field.to_string());
                     let variant_name = &syn::Ident::new(&variant_name_string, Span::call_site());
                     let attr_doc_vec: Vec<_> = field.attrs.iter()
-                        .filter(|attr| attr.path.is_ident("doc".into()))
+                        .filter(|attr| attr.path.is_ident("doc"))
                         .map(|attr| attr.into_token_stream())
                         .collect();
                     field.attrs.iter()
-                        .filter(|attr| attr.path.is_ident("interactive_clap".into()))
-                        .map(|attr| attr.tokens.clone())
-                        .flatten()
+                        .filter(|attr| attr.path.is_ident("interactive_clap"))
+                        .flat_map(|attr| attr.tokens.clone())
                         .filter(|attr_token| {
                             match attr_token {
-                                proc_macro2::TokenTree::Group(group) => {
-                                    if group.stream().to_string().contains("named_arg") {
-                                        true
-                                    } else {
-                                        false
-                                    }
-                                },
+                                proc_macro2::TokenTree::Group(group) => group.stream().to_string().contains("named_arg"),
                                 _ => abort_call_site!("Only option `TokenTree::Group` is needed")
                             }
                         })
@@ -230,11 +220,11 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 let mut attrs: Vec<proc_macro2::TokenStream> = Vec::new();
                 if !&variant.attrs.is_empty() {
                     for attr in &variant.attrs {
-                        if attr.path.is_ident("doc".into()) {
+                        if attr.path.is_ident("doc") {
                             attrs.push(attr.into_token_stream());
                             // break;
                         };
-                        if attr.path.is_ident("cfg".into()) {
+                        if attr.path.is_ident("cfg") {
                             for attr_token in attr.tokens.clone() {
                                 match attr_token {
                                     proc_macro2::TokenTree::Group(group) => {
@@ -400,17 +390,17 @@ fn context_scope_for_enum(name: &syn::Ident) -> proc_macro2::TokenStream {
 
 fn for_cli_field(
     field: &syn::Field,
-    ident_skip_field_vec: &Vec<syn::Ident>,
+    ident_skip_field_vec: &[syn::Ident],
 ) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
-    if ident_skip_field_vec.contains(&ident_field) {
+    if ident_skip_field_vec.contains(ident_field) {
         quote!()
     } else {
         let ty = &field.ty;
         match &ty {
             syn::Type::Path(type_path) => match type_path.path.segments.first() {
                 Some(path_segment) => {
-                    if path_segment.ident.eq("Option".into()) {
+                    if path_segment.ident.eq("Option") {
                         quote! {
                             #ident_field: args.#ident_field.into()
                         }

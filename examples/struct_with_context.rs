@@ -64,6 +64,7 @@ impl Sender {
 fn main() {
     let cli_offline_args = OfflineArgs::parse();
     let context = (); // #[interactive_clap(input_context = ())]
-    let offline_args = <OfflineArgs as interactive_clap::FromCli>::from_cli(Some(cli_offline_args), context);
+    let offline_args =
+        <OfflineArgs as interactive_clap::FromCli>::from_cli(Some(cli_offline_args), context);
     println!("offline_args: {:?}", offline_args)
 }

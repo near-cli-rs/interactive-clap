@@ -36,5 +36,7 @@ pub trait FromCli {
     fn from_cli(
         optional_clap_variant: Option<<Self as ToCli>::CliVariant>,
         context: Self::FromCliContext,
-    ) -> Result<Option<Self>, Self::FromCliError> where Self: Sized + ToCli;
+    ) -> Result<Option<Self>, Self::FromCliError>
+    where
+        Self: Sized + ToCli;
 }

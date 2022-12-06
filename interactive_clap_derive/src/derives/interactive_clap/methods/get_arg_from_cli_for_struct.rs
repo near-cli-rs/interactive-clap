@@ -6,7 +6,7 @@ use syn;
 
 pub fn from_cli_arg(ast: &syn::DeriveInput, fields: &syn::Fields) -> Vec<proc_macro2::TokenStream> {
     let interactive_clap_attrs_context =
-        super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(&ast);
+        super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(ast);
 
     let fields_without_subcommand = fields
         .iter()
@@ -46,7 +46,9 @@ pub fn from_cli_arg(ast: &syn::DeriveInput, fields: &syn::Fields) -> Vec<proc_ma
                     .collect::<Vec<_>>();
             if fields_without_subcommand_to_string.contains(&ident_field.to_string())
                 & fields_without_skip_default_from_cli_arg_to_string
-                    .contains(&ident_field.to_string())
+                    .iter()
+                    .map(|token_stream| token_stream.to_string())
+                    .any(|x| *ident_field == x)
             {
                 let fn_from_cli_arg =
                     syn::Ident::new(&format!("from_cli_{}", &ident_field), Span::call_site());

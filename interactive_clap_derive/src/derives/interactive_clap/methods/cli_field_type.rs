@@ -8,7 +8,7 @@ pub fn cli_field_type(ty: &syn::Type) -> proc_macro2::TokenStream {
     match &ty {
         syn::Type::Path(type_path) => match type_path.path.segments.first() {
             Some(path_segment) => {
-                if path_segment.ident.eq("Option".into()) {
+                if path_segment.ident.eq("Option") {
                     match &path_segment.arguments {
                         syn::PathArguments::AngleBracketed(gen_args) => {
                             let ty_option = &gen_args.args;
