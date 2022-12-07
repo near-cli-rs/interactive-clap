@@ -22,5 +22,6 @@ strum = { git = "https://github.com/frol/strum", branch = "feat/discriminants-pa
 strum_macros = "0.20"
 
 dialoguer = "0.9"
+inquire = "0.5"
 
 color-eyre = "0.5"

@@ -35,9 +35,7 @@ pub fn vec_fn_input_arg(
                     fn #fn_input_arg(
                         _context: &#input_context_dir,
                     ) -> color_eyre::eyre::Result<#ty> {
-                        Ok(dialoguer::Input::new()
-                            .with_prompt(#promt)
-                            .interact_text()?)
+                        Ok(inquire::CustomType::new(#promt).prompt()?)
                     }
                 };
             }
@@ -66,9 +64,7 @@ pub fn vec_fn_input_arg(
                 fn #fn_input_arg(
                     _context: &#input_context_dir,
                 ) -> color_eyre::eyre::Result<#ty> {
-                    Ok(dialoguer::Input::new()
-                        .with_prompt(#literal.to_string().as_str())
-                        .interact_text()?)
+                    Ok(inquire::CustomType::new(#literal.to_string().as_str()).prompt()?)
                 }
             }
         })
