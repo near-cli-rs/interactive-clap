@@ -105,7 +105,7 @@ pub fn fn_choose_variant(
                     }
                 });
                 cli_variant = quote! {
-                    use dialoguer::{theme::ColorfulTheme, Select};
+                    use inquire::Select;
                     use strum::{EnumMessage, IntoEnumIterator};
                     fn prompt_variant<T>(prompt: &str) -> Option<T>
                     where
@@ -123,14 +123,17 @@ pub fn fn_choose_variant(
                         .collect::<Vec<_>>();
                         #actions_push_back;
 
-                        let selected = Select::with_theme(&ColorfulTheme::default())
-                        .with_prompt(prompt)
-                        .items(&actions)
-                        .default(0)
-                        .interact()
+                        let selected = Select::new(prompt, actions.clone())
+                        .prompt()
                         .unwrap();
-
-                        variants.get(selected).cloned()
+                        let mut selected_index: usize = 0;
+                        for (i, item) in actions.iter().enumerate() {
+                            if item == &selected {
+                                selected_index = i;
+                                break;
+                            }
+                        };
+                        variants.get(selected_index).cloned()
                     };
                     let variant = if let Some(variant) = prompt_variant(#literal.to_string().as_str()) {
                         variant

@@ -21,7 +21,6 @@ clap = { version = "4.0.18", features = ["derive"] }
 strum = { git = "https://github.com/frol/strum", branch = "feat/discriminants-pass-through-attributes", features = ["derive"] }
 strum_macros = "0.20"
 
-dialoguer = "0.9"
 inquire = "0.5"
 
 color-eyre = "0.5"
