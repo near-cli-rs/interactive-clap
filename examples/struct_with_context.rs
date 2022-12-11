@@ -6,6 +6,8 @@
 //                    ./struct_with_context account QWERTY => offline_args: Ok(OfflineArgs { account: Sender { sender_account_id: "QWERTY" } })
 // To learn more about the parameters, use "help" flag: ./struct_with_context --help
 
+use inquire::Text;
+
 mod common;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
@@ -55,9 +57,7 @@ pub struct Sender {
 impl Sender {
     fn input_sender_account_id(context: &OfflineArgsContext) -> color_eyre::eyre::Result<String> {
         println!("Let's use context: {:?}", context);
-        Ok(dialoguer::Input::new()
-            .with_prompt("What is the account ID?")
-            .interact_text()?)
+        Ok(Text::new("What is the account ID?").prompt()?)
     }
 }
 

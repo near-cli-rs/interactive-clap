@@ -7,6 +7,8 @@
 //                                    => args: Ok(Args { age: 30, first_name: "QWE", second_name: "QWERTY" })
 // To learn more about the parameters, use "help" flag: ./advanced_struct --help
 
+use inquire::{CustomType, Text};
+
 #[derive(Debug, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(skip_default_from_cli)]
 struct Args {
@@ -58,15 +60,11 @@ impl Args {
     }
 
     fn input_age(_context: &()) -> color_eyre::eyre::Result<u64> {
-        Ok(dialoguer::Input::new()
-            .with_prompt("How old are you?")
-            .interact_text()?)
+        Ok(CustomType::new("How old are you?").prompt()?)
     }
 
     fn input_second_name(_context: &()) -> color_eyre::eyre::Result<String> {
-        Ok(dialoguer::Input::new()
-            .with_prompt("What is your last name?")
-            .interact_text()?)
+        Ok(Text::new("What is your last name?").prompt()?)
     }
 
     fn from_cli_age(
