@@ -10,7 +10,7 @@
 use inquire::Select;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-use interactive_clap::ToCliArgs;
+use interactive_clap::{ToCliArgs, SelectVariantOrBack};
 
 mod common;
 
@@ -55,26 +55,19 @@ impl Submit {
     fn choose_variant(
         _context: common::ConnectionConfig,
     ) -> color_eyre::eyre::Result<Option<Self>> {
-        let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
-        let mut submits = variants
-            .iter()
-            .map(|p| p.get_message().unwrap().to_owned())
-            .collect::<Vec<_>>();
-        submits.push("back".to_string());
-        let select_submit = Select::new("How would you like to proceed", submits.clone())
-            .prompt()
-            .unwrap();
-        let mut selected: usize = 0;
-        for (i, item) in submits.iter().enumerate() {
-            if item == &select_submit {
-                selected = i;
-                break;
-            }
-        }
-        match variants.get(selected) {
-            Some(SubmitDiscriminants::Send) => Ok(Some(Submit::Send)),
-            Some(SubmitDiscriminants::Display) => Ok(Some(Submit::Display)),
-            None => Ok(None),
+        let selected_variant = Select::new(
+            "How would you like to proceed",
+            SubmitDiscriminants::iter()
+                .map(SelectVariantOrBack::Variant)
+                .chain([SelectVariantOrBack::Back])
+                .collect(),
+        )
+        .prompt()
+        .unwrap();
+        match selected_variant {
+            SelectVariantOrBack::Variant(SubmitDiscriminants::Send) => Ok(Some(Submit::Send)),
+            SelectVariantOrBack::Variant(SubmitDiscriminants::Display) => Ok(Some(Submit::Display)),
+            SelectVariantOrBack::Back => Ok(None),
         }
     }
 }
