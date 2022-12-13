@@ -18,7 +18,7 @@ pub fn fn_choose_variant(
 
     let variant_ident = &variants[0].ident;
     let mut cli_variant = quote!();
-    let mut actions_push_back = quote! {actions.push("back".to_string())};
+    let mut actions_push_back = quote! {.chain([SelectVariantOrBack::Back])};
     let mut ast_attrs: Vec<&str> = std::vec::Vec::new();
 
     if !ast.attrs.is_empty() {
@@ -105,32 +105,27 @@ pub fn fn_choose_variant(
                     }
                 });
                 cli_variant = quote! {
-                    use dialoguer::{theme::ColorfulTheme, Select};
+                    use interactive_clap::SelectVariantOrBack;
+                    use inquire::Select;
                     use strum::{EnumMessage, IntoEnumIterator};
                     fn prompt_variant<T>(prompt: &str) -> Option<T>
                     where
                     T: IntoEnumIterator + EnumMessage,
                     T: Copy + Clone,
                     {
-                        let variants = T::iter().collect::<Vec<_>>();
-                        let mut actions = variants
-                        .iter()
-                        .map(|p| {
-                            p.get_message()
-                            .unwrap_or_else(|| "error[This entry does not have an option message!!]")
-                            .to_owned()
-                        })
-                        .collect::<Vec<_>>();
-                        #actions_push_back;
-
-                        let selected = Select::with_theme(&ColorfulTheme::default())
-                        .with_prompt(prompt)
-                        .items(&actions)
-                        .default(0)
-                        .interact()
+                        let selected_variant = Select::new(
+                            prompt,
+                            T::iter()
+                                .map(SelectVariantOrBack::Variant)
+                                #actions_push_back
+                                .collect(),
+                        )
+                        .prompt()
                         .unwrap();
-
-                        variants.get(selected).cloned()
+                        match selected_variant {
+                            SelectVariantOrBack::Variant(variant) => Some(variant),
+                            SelectVariantOrBack::Back => None,
+                        }
                     };
                     let variant = if let Some(variant) = prompt_variant(#literal.to_string().as_str()) {
                         variant

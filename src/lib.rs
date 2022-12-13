@@ -40,3 +40,17 @@ pub trait FromCli {
     where
         Self: Sized + ToCli;
 }
+
+pub enum SelectVariantOrBack<T: strum::EnumMessage> {
+    Variant(T),
+    Back,
+}
+impl<T: strum::EnumMessage> std::fmt::Display for SelectVariantOrBack<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Self::Variant(variant) = self {
+            f.write_str(variant.get_message().unwrap())
+        } else {
+            f.write_str("back")
+        }
+    }
+}

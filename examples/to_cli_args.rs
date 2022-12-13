@@ -7,10 +7,10 @@
 //                    ./to_cli_args display => Your console command:  display
 // To learn more about the parameters, use "help" flag: ./to_cli_args --help
 
-use dialoguer::{theme::ColorfulTheme, Select};
+use inquire::Select;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-use interactive_clap::ToCliArgs;
+use interactive_clap::{ToCliArgs, SelectVariantOrBack};
 
 mod common;
 
@@ -55,28 +55,34 @@ impl Submit {
     fn choose_variant(
         _context: common::ConnectionConfig,
     ) -> color_eyre::eyre::Result<Option<Self>> {
-        let variants = SubmitDiscriminants::iter().collect::<Vec<_>>();
-        let mut submits = variants
-            .iter()
-            .map(|p| p.get_message().unwrap().to_owned())
-            .collect::<Vec<_>>();
-        submits.push("back".to_string());
-        let select_submit = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("How would you like to proceed")
-            .items(&submits)
-            .default(0)
-            .interact()
-            .unwrap();
-        match variants.get(select_submit) {
-            Some(SubmitDiscriminants::Send) => Ok(Some(Submit::Send)),
-            Some(SubmitDiscriminants::Display) => Ok(Some(Submit::Display)),
-            None => Ok(None),
+        let selected_variant = Select::new(
+            "How would you like to proceed",
+            SubmitDiscriminants::iter()
+                .map(SelectVariantOrBack::Variant)
+                .chain([SelectVariantOrBack::Back])
+                .collect(),
+        )
+        .prompt()
+        .unwrap();
+        match selected_variant {
+            SelectVariantOrBack::Variant(SubmitDiscriminants::Send) => Ok(Some(Submit::Send)),
+            SelectVariantOrBack::Variant(SubmitDiscriminants::Display) => Ok(Some(Submit::Display)),
+            SelectVariantOrBack::Back => Ok(None),
         }
     }
 }
 
 impl interactive_clap::ToCli for Submit {
     type CliVariant = Submit;
+}
+
+impl std::fmt::Display for SubmitDiscriminants {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Send => write!(f, "send"),
+            Self::Display => write!(f, "display"),
+        }
+    }
 }
 
 fn main() {
