@@ -108,7 +108,7 @@ pub fn fn_choose_variant(
                     use interactive_clap::SelectVariantOrBack;
                     use inquire::Select;
                     use strum::{EnumMessage, IntoEnumIterator};
-                    fn prompt_variant<T>(prompt: &str) -> Option<T>
+                    fn prompt_variant<T>(prompt: &str) -> color_eyre::eyre::Result<Option<T>>
                     where
                     T: IntoEnumIterator + EnumMessage,
                     T: Copy + Clone,
@@ -120,14 +120,13 @@ pub fn fn_choose_variant(
                                 #actions_push_back
                                 .collect(),
                         )
-                        .prompt()
-                        .unwrap();
+                        .prompt()?;
                         match selected_variant {
-                            SelectVariantOrBack::Variant(variant) => Some(variant),
-                            SelectVariantOrBack::Back => None,
+                            SelectVariantOrBack::Variant(variant) => Ok(Some(variant)),
+                            SelectVariantOrBack::Back => Ok(None),
                         }
                     };
-                    let variant = if let Some(variant) = prompt_variant(#literal.to_string().as_str()) {
+                    let variant = if let Some(variant) = prompt_variant(#literal.to_string().as_str())? {
                         variant
                     } else {
                         return Ok(None);
