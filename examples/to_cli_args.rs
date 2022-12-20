@@ -10,7 +10,7 @@
 use inquire::Select;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-use interactive_clap::{ToCliArgs, SelectVariantOrBack};
+use interactive_clap::{SelectVariantOrBack, ToCliArgs};
 
 mod common;
 

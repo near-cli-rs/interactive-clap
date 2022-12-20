@@ -216,20 +216,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "interactive_clap"
+name = "interactive-clap"
 version = "0.1.0"
 dependencies = [
  "clap",
  "color-eyre",
  "inquire",
- "interactive_clap_derive",
+ "interactive-clap-derive",
  "shell-words",
  "strum",
  "strum_macros",
 ]
 
 [[package]]
-name = "interactive_clap_derive"
+name = "interactive-clap-derive"
 version = "0.1.0"
 dependencies = [
  "proc-macro-error",

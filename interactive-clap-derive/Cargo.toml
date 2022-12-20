@@ -1,0 +1,19 @@
+[package]
+name = "interactive-clap-derive"
+version = "0.1.0"
+authors = ["FroVolod <frol_off@meta.ua>"]
+edition = "2018"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/FroVolod/interactive-clap/tree/master/interactive-clap-derive"
+description = "Interactive mode extension crate to Command Line Arguments Parser (https://crates.io/crates/clap) (derive macros helper crate)"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0.24"
+proc-macro-error = "1"
+quote = "1.0"
+syn = "1.0"
