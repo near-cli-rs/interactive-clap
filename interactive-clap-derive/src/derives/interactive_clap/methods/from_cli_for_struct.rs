@@ -106,21 +106,13 @@ fn fields_value(field: &syn::Field) -> proc_macro2::TokenStream {
             },
             _ => String::new(),
         };
-        if let "Option" = type_string.as_str() {
-            quote! {
-                let #ident_field = optional_clap_variant
-                    .as_ref()
-                    .and_then(|clap_variant| clap_variant.#ident_field.clone());
-            }
-        } else {
-            quote! {
-                let #ident_field = Self::#fn_from_cli_arg(
-                    optional_clap_variant
-                        .clone()
-                        .and_then(|clap_variant| clap_variant.#ident_field),
-                        &context,
-                )?;
-            }
+        quote! {
+            let #ident_field = Self::#fn_from_cli_arg(
+                optional_clap_variant
+                    .clone()
+                    .and_then(|clap_variant| clap_variant.#ident_field),
+                    &context,
+            )?;
         }
     } else {
         quote!()

@@ -60,14 +60,36 @@ pub fn from_cli_arg(ast: &syn::DeriveInput, fields: &syn::Fields) -> Vec<proc_ma
                 let cli_field_type = super::cli_field_type::cli_field_type(ty);
                 let fn_input_arg =
                     syn::Ident::new(&format!("input_{}", &ident_field), Span::call_site());
-                quote! {
-                    fn #fn_from_cli_arg(
-                        #optional_cli_field_name: #cli_field_type,
-                        context: &#input_context_dir,
-                    ) -> color_eyre::eyre::Result<#ty> {
-                        match #optional_cli_field_name {
-                            Some(#ident_field) => Ok(#ident_field),
-                            None => Self::#fn_input_arg(&context),
+
+                let type_string = match &ty {
+                    syn::Type::Path(type_path) => match type_path.path.segments.last() {
+                        Some(path_segment) => path_segment.ident.to_string(),
+                        _ => String::new(),
+                    },
+                    _ => String::new(),
+                };
+                if let "Option" = type_string.as_str() {
+                    quote! {
+                        fn #fn_from_cli_arg(
+                            #optional_cli_field_name: #cli_field_type,
+                            context: &#input_context_dir,
+                        ) -> color_eyre::eyre::Result<#ty> {
+                            match #optional_cli_field_name {
+                                Some(#ident_field) => Ok(Some(#ident_field)),
+                                None => Self::#fn_input_arg(&context),
+                            }
+                        }
+                    }
+                } else {
+                    quote! {
+                        fn #fn_from_cli_arg(
+                            #optional_cli_field_name: #cli_field_type,
+                            context: &#input_context_dir,
+                        ) -> color_eyre::eyre::Result<#ty> {
+                            match #optional_cli_field_name {
+                                Some(#ident_field) => Ok(#ident_field),
+                                None => Self::#fn_input_arg(&context),
+                            }
                         }
                     }
                 }
