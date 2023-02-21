@@ -99,13 +99,6 @@ fn fields_value(field: &syn::Field) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
     let fn_from_cli_arg = syn::Ident::new(&format!("from_cli_{}", &ident_field), Span::call_site());
     if super::fields_without_subcommand::is_field_without_subcommand(field) {
-        let type_string = match &field.ty {
-            syn::Type::Path(type_path) => match type_path.path.segments.last() {
-                Some(path_segment) => path_segment.ident.to_string(),
-                _ => String::new(),
-            },
-            _ => String::new(),
-        };
         quote! {
             let #ident_field = Self::#fn_from_cli_arg(
                 optional_clap_variant
