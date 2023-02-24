@@ -12,7 +12,7 @@ mod common;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = ())]
-#[interactive_clap(output_context = OfflineArgsContext)]
+#[interactive_clap(output_context = NetworkContext)]
 pub struct OfflineArgs {
     #[interactive_clap(named_arg)]
     ///Specify a sender
@@ -27,11 +27,11 @@ pub struct OfflineArgsContext {
 impl OfflineArgsContext {
     fn from_previous_context(
         _previous_context: (),
-        _scope: &<OfflineArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> Self {
-        Self {
+        scope: &<OfflineArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
             some_context_field: 42,
-        }
+        })
     }
 }
 
@@ -43,19 +43,20 @@ impl From<OfflineArgsContext> for NetworkContext {
     }
 }
 
+#[derive(Debug)]
 pub struct NetworkContext {
     pub connection_config: Option<common::ConnectionConfig>,
 }
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
-#[interactive_clap(context = OfflineArgsContext)]
+#[interactive_clap(context = NetworkContext)]
 pub struct Sender {
     #[interactive_clap(skip_default_input_arg)]
     pub sender_account_id: String,
 }
 
 impl Sender {
-    fn input_sender_account_id(context: &OfflineArgsContext) -> color_eyre::eyre::Result<String> {
+    fn input_sender_account_id(context: &NetworkContext) -> color_eyre::eyre::Result<String> {
         println!("Let's use context: {:?}", context);
         Ok(Text::new("What is the account ID?").prompt()?)
     }

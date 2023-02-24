@@ -145,16 +145,17 @@ fn field_value_named_arg(
             let variant_name_string = crate::helpers::snake_case_to_camel_case::snake_case_to_camel_case(ident_field.to_string());
             let variant_name = &syn::Ident::new(&variant_name_string, Span::call_site());
             match output_context_dir {
-                Some(_) => {
+                Some(output_context_dir) => {
                     let context_for_struct = syn::Ident::new(&format!("{}Context", &name), Span::call_site());
                     quote! {
                         let new_context = #context_for_struct::from_previous_context(context, &new_context_scope)?;
+                        let output_context = #output_context_dir::from(new_context);
                         let #ident_field = <#ty as interactive_clap::FromCli>::from_cli(
                             optional_clap_variant.and_then(|clap_variant| match clap_variant.#ident_field {
                                 Some(#enum_for_clap_named_arg::#variant_name(cli_arg)) => Some(cli_arg),
                                 None => None,
                             }),
-                            new_context.into(),
+                            output_context,
                         )?;
                         let #ident_field = if let Some(value) = #ident_field {
                             value
@@ -207,13 +208,14 @@ fn field_value_subcommand(
         })
         .map(|_| {
             match output_context_dir {
-                Some(_) => {
+                Some(output_context_dir) => {
                     let context_for_struct = syn::Ident::new(&format!("{}Context", &name), Span::call_site());
                     quote! {
                         let new_context = #context_for_struct::from_previous_context(context, &new_context_scope)?;
+                        let output_context = #output_context_dir::from(new_context);
                         let #ident_field = match optional_clap_variant.and_then(|clap_variant| clap_variant.#ident_field) {
-                            Some(cli_arg) => <#ty as interactive_clap::FromCli>::from_cli(Some(cli_arg), new_context.into())?,
-                            None => #ty::choose_variant(new_context.into())?,
+                            Some(cli_arg) => <#ty as interactive_clap::FromCli>::from_cli(Some(cli_arg), output_context)?,
+                            None => #ty::choose_variant(output_context)?,
                         };
                         let #ident_field = if let Some(value) = #ident_field {
                             value

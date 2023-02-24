@@ -27,12 +27,13 @@ pub fn from_cli_for_enum(
 
 
                 match &interactive_clap_attrs_context.output_context_dir {
-                    Some(_) => quote! {
+                    Some(output_context_dir) => quote! {
                         Some(#cli_name::#variant_ident(inner_cli_args)) => {
                             type Alias = <#name as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope;
                             let new_context_scope = Alias::#variant_ident;
-                            let new_context = #context_name::from_previous_context(context.clone(), &new_context_scope);
-                            let optional_inner_args = <#ty as interactive_clap::FromCli>::from_cli(Some(inner_cli_args), new_context.into())?;
+                            let new_context = #context_name::from_previous_context(context.clone(), &new_context_scope)?;
+                            let output_context = #output_context_dir::from(new_context);
+                            let optional_inner_args = <#ty as interactive_clap::FromCli>::from_cli(Some(inner_cli_args), output_context)?;
                             if let Some(inner_args) = optional_inner_args {
                                 Ok(Some(Self::#variant_ident(inner_args,)))
                             } else {

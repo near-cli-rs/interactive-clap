@@ -48,18 +48,17 @@ impl InteractiveClapAttrsContext {
         } else {
             Some(context_dir)
         };
-        let input_context_dir: Option<proc_macro2::TokenStream> =
-            if input_context_dir.is_empty() {
-                None
-            } else {
-                Some(input_context_dir)
-            };
-        let output_context_dir: Option<proc_macro2::TokenStream> =
-            if output_context_dir.is_empty() {
-                None
-            } else {
-                Some(output_context_dir)
-            };
+        let input_context_dir: Option<proc_macro2::TokenStream> = if input_context_dir.is_empty() {
+            None
+        } else {
+            Some(input_context_dir)
+        };
+        let output_context_dir: Option<proc_macro2::TokenStream> = if output_context_dir.is_empty()
+        {
+            None
+        } else {
+            Some(output_context_dir)
+        };
         Self {
             context_dir,
             input_context_dir,
