@@ -84,7 +84,7 @@ pub fn from_cli_for_struct(
             fn from_cli(
                 optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
                 context: Self::FromCliContext,
-            ) -> Result<Option<Self>, Self::FromCliError> where Self: Sized + interactive_clap::ToCli {
+            ) -> ResultFromCli<<Self as ToCli>::CliVariant, Self::FromCliError> where Self: Sized + interactive_clap::ToCli {
                 #(#fields_value)*
                 #new_context_scope
                 #field_value_named_arg
@@ -100,12 +100,15 @@ fn fields_value(field: &syn::Field) -> proc_macro2::TokenStream {
     let fn_from_cli_arg = syn::Ident::new(&format!("from_cli_{}", &ident_field), Span::call_site());
     if super::fields_without_subcommand::is_field_without_subcommand(field) {
         quote! {
-            let #ident_field = Self::#fn_from_cli_arg(
+            let #ident_field = match Self::#fn_from_cli_arg(
                 optional_clap_variant
                     .clone()
                     .and_then(|clap_variant| clap_variant.#ident_field),
                     &context,
-            )?;
+            ) {
+                Ok(#ident_field) => #ident_field,
+                Err(err) => return ResultFromCli::Err(color_eyre::Report::msg(err.to_string()));
+            };
         }
     } else {
         quote!()
@@ -148,9 +151,12 @@ fn field_value_named_arg(
                 Some(output_context_dir) => {
                     let context_for_struct = syn::Ident::new(&format!("{}Context", &name), Span::call_site());
                     quote! {
-                        let new_context = #context_for_struct::from_previous_context(context, &new_context_scope)?;
+                        let new_context = match #context_for_struct::from_previous_context(context, &new_context_scope) {
+                            Ok(new_context) => new_context,
+                            Err(err) => return ResultFromCli::Err(color_eyre::Report::msg(err.to_string()));
+                        };
                         let output_context = #output_context_dir::from(new_context);
-                        let #ident_field = <#ty as interactive_clap::FromCli>::from_cli(
+                        let #ident_field = match <#ty as interactive_clap::FromCli>::from_cli(
                             optional_clap_variant.and_then(|clap_variant| match clap_variant.#ident_field {
                                 Some(#enum_for_clap_named_arg::#variant_name(cli_arg)) => Some(cli_arg),
                                 None => None,
