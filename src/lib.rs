@@ -30,21 +30,13 @@ pub trait ToCliArgs {
     fn to_cli_args(&self) -> std::collections::VecDeque<String>;
 }
 
-pub enum ResultFromCli<T, E> {
-    Ok(T),
-    Back,
-    Exit,
-    Err(T, E),
-}
-
-
 pub trait FromCli {
     type FromCliContext;
     type FromCliError;
     fn from_cli(
         optional_clap_variant: Option<<Self as ToCli>::CliVariant>,
         context: Self::FromCliContext,
-    ) -> ResultFromCli<<Self as ToCli>::CliVariant, Self::FromCliError>
+    ) -> Result<Option<Self>, Self::FromCliError>
     where
         Self: Sized + ToCli;
 }
