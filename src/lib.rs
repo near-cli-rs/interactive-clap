@@ -31,12 +31,10 @@ pub trait ToCliArgs {
 }
 
 pub enum ResultFromCli<T, E> {
-    Ok(T),
+    Ok(Option<T>),
     Back,
-    Exit,
-    Err(T, E),
+    Err(Option<T>, E),
 }
-
 
 pub trait FromCli {
     type FromCliContext;

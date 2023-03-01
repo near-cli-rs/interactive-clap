@@ -36,36 +36,28 @@ impl interactive_clap::FromCli for OnlineArgs {
     where
         Self: Sized + interactive_clap::ToCli,
     {
-        let optional_network_name = match optional_clap_variant
-            .clone()
-            .and_then(|clap_variant| clap_variant.network_name)
-        {
-            Some(network_name) => Some(network_name),
-            None => match Self::input_network_name(&context) {
-                Ok(network_name) => Some(network_name),
-                Err(_) => {
-                    return ResultFromCli::Exit;
-                }
-            },
-        };
-
-        let optional_submit =
-            match optional_clap_variant.and_then(|clap_variant| clap_variant.submit) {
-                Some(submit) => Some(submit),
-                None => match Submit::choose_variant(context) {
-                    Ok(Some(submit)) => Some(submit.into()),
-                    Ok(None) => {
-                        return ResultFromCli::Back;
-                    }
-                    Err(_) => {
-                        return ResultFromCli::Exit;
-                    }
-                },
+        let mut clap_variant = optional_clap_variant.unwrap_or_default();
+        if clap_variant.network_name.is_none() {
+            clap_variant.network_name = match Self::input_network_name(&context) {
+                Ok(Some(network_name)) => Some(network_name),
+                Ok(None) => return ResultFromCli::Ok(Some(clap_variant)),
+                Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
             };
-        ResultFromCli::Ok(CliOnlineArgs {
-            network_name: optional_network_name,
-            submit: optional_submit,
-        })
+        }
+
+        let next_context = context.clone();
+
+        match Submit::from_cli(clap_variant.submit, next_context) {
+            ResultFromCli::Ok(submit) => {
+                clap_variant.submit = submit;
+            }
+            ResultFromCli::Back => return ResultFromCli::Back,
+            ResultFromCli::Err(submit, err) => {
+                clap_variant.submit = submit;
+                return ResultFromCli::Err(Some(clap_variant), err);
+            }
+        }
+        ResultFromCli::Ok(Some(clap_variant))
     }
 }
 
@@ -109,12 +101,8 @@ impl interactive_clap::FromCli for Submit {
         Self: Sized + interactive_clap::ToCli,
     {
         match optional_clap_variant {
-            Some(submit) => ResultFromCli::Ok(submit),
-            None => match Self::choose_variant(context) {
-                Ok(Some(submit)) => ResultFromCli::Ok(submit.into()),
-                Ok(None) => ResultFromCli::Back,
-                Err(_) => ResultFromCli::Exit,
-            },
+            Some(submit) => ResultFromCli::Ok(Some(submit)),
+            None => Self::choose_variant(context),
         }
     }
 }
@@ -139,8 +127,11 @@ impl interactive_clap::ToCliArgs for CliSubmit {
 impl Submit {
     fn choose_variant(
         _context: common::ConnectionConfig,
-    ) -> color_eyre::eyre::Result<Option<Self>> {
-        let selected_variant = Select::new(
+    ) -> ResultFromCli<
+        <Self as interactive_clap::ToCli>::CliVariant,
+        <Self as interactive_clap::FromCli>::FromCliError,
+    > {
+        match Select::new(
             "How would you like to proceed",
             SubmitDiscriminants::iter()
                 .map(SelectVariantOrBack::Variant)
@@ -148,11 +139,17 @@ impl Submit {
                 .collect(),
         )
         .prompt()
-        .unwrap();
-        match selected_variant {
-            SelectVariantOrBack::Variant(SubmitDiscriminants::Send) => Ok(Some(Submit::Send)),
-            SelectVariantOrBack::Variant(SubmitDiscriminants::Display) => Ok(Some(Submit::Display)),
-            SelectVariantOrBack::Back => Ok(None),
+        {
+            Ok(SelectVariantOrBack::Variant(variant)) => ResultFromCli::Ok(Some(match variant {
+                SubmitDiscriminants::Send => CliSubmit::Send,
+                SubmitDiscriminants::Display => CliSubmit::Display,
+            })),
+            Ok(SelectVariantOrBack::Back) => ResultFromCli::Back,
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => ResultFromCli::Ok(None),
+            Err(err) => ResultFromCli::Err(None, err.into()),
         }
     }
 }
@@ -169,24 +166,37 @@ impl std::fmt::Display for SubmitDiscriminants {
     }
 }
 
-fn main() {
+fn main() -> color_eyre::Result<()> {
     let mut cli_online_args = OnlineArgs::parse();
     let context = common::ConnectionConfig::Testnet; //#[interactive_clap(context = common::ConnectionConfig)]
-    let online_args = loop {
+    loop {
         match <OnlineArgs as interactive_clap::FromCli>::from_cli(
-            Some(cli_online_args.clone()),
+            Some(cli_online_args),
             context.clone(),
         ) {
-            ResultFromCli::Ok(args) => break args,
-            ResultFromCli::Back => (),
-            ResultFromCli::Exit => todo!(),
-            ResultFromCli::Err(cli_args, err) => todo!(),
+            ResultFromCli::Ok(Some(cli_args)) => {
+                println!(
+                    "Your console command:  {}",
+                    shell_words::join(&cli_args.to_cli_args())
+                );
+                return Ok(());
+            }
+            ResultFromCli::Ok(None) => {
+                println!("Goodbye!");
+                return Ok(());
+            }
+            ResultFromCli::Back => {
+                cli_online_args = Default::default();
+            }
+            ResultFromCli::Err(cli_args, err) => {
+                if let Some(cli_args) = cli_args {
+                    println!(
+                        "Your console command:  {}",
+                        shell_words::join(&cli_args.to_cli_args())
+                    );
+                }
+                return Err(err);
+            }
         }
-    };
-    cli_online_args = online_args.into();
-    let completed_cli = cli_online_args.to_cli_args();
-    println!(
-        "Your console command:  {}",
-        shell_words::join(&completed_cli)
-    );
+    }
 }

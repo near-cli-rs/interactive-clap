@@ -88,7 +88,7 @@ pub fn from_cli_arg(ast: &syn::DeriveInput, fields: &syn::Fields) -> Vec<proc_ma
                         ) -> color_eyre::eyre::Result<#ty> {
                             match #optional_cli_field_name {
                                 Some(#ident_field) => Ok(#ident_field),
-                                None => Self::#fn_input_arg(&context),
+                                None => Ok(Self::#fn_input_arg(&context)?.unwrap()), // XXX: I cannot remember where this function is used, but I had to use `.unwrap()` to make the example compilable. It must be implemented without `.unwrap()`
                             }
                         }
                     }
