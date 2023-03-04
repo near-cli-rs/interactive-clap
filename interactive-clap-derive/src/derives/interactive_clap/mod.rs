@@ -175,7 +175,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 };
 
             let gen = quote! {
-                #[derive(Debug, Default, Clone, clap::Parser, interactive_clap_derive::ToCliArgs)]
+                #[derive(Debug, Default, Clone, clap::Parser, interactive_clap::ToCliArgs)]
                 #[clap(author, version, about, long_about = None)]
                 pub struct #cli_name {
                     #( #cli_fields, )*
@@ -305,7 +305,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 self::methods::from_cli_for_enum::from_cli_for_enum(ast, variants);
 
             let gen = quote! {
-                #[derive(Debug, Clone, clap::Parser, interactive_clap_derive::ToCliArgs)]
+                #[derive(Debug, Clone, clap::Parser, interactive_clap::ToCliArgs)]
                 pub enum #cli_name {
                     #( #enum_variants, )*
                 }

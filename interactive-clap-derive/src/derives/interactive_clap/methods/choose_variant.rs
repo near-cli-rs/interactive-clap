@@ -108,32 +108,40 @@ pub fn fn_choose_variant(
                     use interactive_clap::SelectVariantOrBack;
                     use inquire::Select;
                     use strum::{EnumMessage, IntoEnumIterator};
-                    fn prompt_variant<T>(prompt: &str) -> color_eyre::eyre::Result<Option<T>>
-                    where
-                    T: IntoEnumIterator + EnumMessage,
-                    T: Copy + Clone,
-                    {
+                    // fn prompt_variant<T>(prompt: &str) -> color_eyre::eyre::Result<Option<T>>
+                    // where
+                    // T: IntoEnumIterator + EnumMessage,
+                    // T: Copy + Clone,
+                    // {
                         let selected_variant = Select::new(
-                            prompt,
-                            T::iter()
+                            // prompt,
+                            #literal.to_string().as_str(),
+                            #command_discriminants::iter()
                                 .map(SelectVariantOrBack::Variant)
                                 #actions_push_back
                                 .collect(),
                         )
-                        .prompt()?;
+                        .prompt();
                         match selected_variant {
-                            SelectVariantOrBack::Variant(variant) => Ok(Some(variant)),
-                            SelectVariantOrBack::Back => Ok(None),
+                            Ok(SelectVariantOrBack::Variant(variant)) => interactive_clap::ResultFromCli::Ok(Some(match variant {
+                                #( #enum_variants, )*
+                            })),
+                            Ok(SelectVariantOrBack::Back) => interactive_clap::ResultFromCli::Back,
+                            Err(
+                                inquire::error::InquireError::OperationCanceled
+                                | inquire::error::InquireError::OperationInterrupted,
+                            ) => interactive_clap::ResultFromCli::Ok(None),
+                            Err(err) => interactive_clap::ResultFromCli::Err(None, err.into()),
                         }
-                    };
-                    let variant = if let Some(variant) = prompt_variant(#literal.to_string().as_str())? {
-                        variant
-                    } else {
-                        return Ok(None);
-                    };
-                    let cli_variant = match variant {
-                        #( #enum_variants, )*
-                    };
+                    // }
+                    // let variant = if let Some(variant) = prompt_variant(#literal.to_string().as_str())? {
+                    //     variant
+                    // } else {
+                    //     return Ok(None);
+                    // };
+                    // let cli_variant = match variant {
+                    //
+                    // };
                 };
             }
         }
@@ -141,13 +149,17 @@ pub fn fn_choose_variant(
     let input_context = interactive_clap_attrs_context.get_input_context_dir();
 
     quote! {
-        pub fn choose_variant(context: #input_context) -> color_eyre::eyre::Result<Option<Self>> {
-            loop {
-                #cli_variant
-                if let Some(variant) = <Self as interactive_clap::FromCli>::from_cli(Some(cli_variant), context.clone())? {
-                    return Ok(Some(variant));
-                }
-            }
+        pub fn choose_variant(_context: #input_context) -> interactive_clap::ResultFromCli<
+        <Self as interactive_clap::ToCli>::CliVariant,
+        <Self as interactive_clap::FromCli>::FromCliError,
+    > {
+            // loop {
+            //
+            //     if let Some(variant) = <Self as interactive_clap::FromCli>::from_cli(Some(cli_variant), context.clone())? {
+            //         return Ok(Some(variant));
+            //     }
+            // }
+            #cli_variant
         }
     }
 }

@@ -73,9 +73,10 @@ pub fn from_cli_for_enum(
             fn from_cli(
                 optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
                 context: Self::FromCliContext,
-            ) -> ResultFromCli<<Self as ToCli>::CliVariant, Self::FromCliError> where Self: Sized + interactive_clap::ToCli {
+            ) -> interactive_clap::ResultFromCli<<Self as interactive_clap::ToCli>::CliVariant, Self::FromCliError> where Self: Sized + interactive_clap::ToCli {
                 match optional_clap_variant {
-                    #(#from_cli_variants)*
+                    // #(#from_cli_variants)*
+                    Some(clap_variant) => interactive_clap::ResultFromCli::Ok(Some(clap_variant)),
                     None => Self::choose_variant(context.clone()),
                 }
             }

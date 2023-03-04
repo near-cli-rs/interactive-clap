@@ -6,17 +6,18 @@
 //                    ./struct_with_context account QWERTY => offline_args: Ok(OfflineArgs { account: Sender { sender_account_id: "QWERTY" } })
 // To learn more about the parameters, use "help" flag: ./struct_with_context --help
 
-use inquire::Text;
+use interactive_clap::{ResultFromCli, ToCliArgs};
 
 mod common;
+mod simple_enum;
 
-#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = ())]
 #[interactive_clap(output_context = NetworkContext)]
 pub struct OfflineArgs {
     #[interactive_clap(named_arg)]
     ///Specify a sender
-    account: Sender,
+    sender: Sender,
 }
 
 #[derive(Debug)]
@@ -43,29 +44,80 @@ impl From<OfflineArgsContext> for NetworkContext {
     }
 }
 
+impl From<()> for NetworkContext {
+    fn from(_: ()) -> Self {
+        Self {
+            connection_config: None,
+        }
+    }
+}
+
+impl From<NetworkContext> for () {
+    fn from(_: NetworkContext) -> Self {
+        ()
+    }
+}
+
 #[derive(Debug)]
 pub struct NetworkContext {
     pub connection_config: Option<common::ConnectionConfig>,
 }
 
-#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = NetworkContext)]
 pub struct Sender {
     #[interactive_clap(skip_default_input_arg)]
-    pub sender_account_id: String,
+    sender_account_id: String,
+    #[interactive_clap(subcommand)]
+    network: simple_enum::Mode,
 }
 
 impl Sender {
-    fn input_sender_account_id(context: &NetworkContext) -> color_eyre::eyre::Result<String> {
+    fn input_sender_account_id(
+        context: &NetworkContext,
+    ) -> color_eyre::eyre::Result<Option<String>> {
         println!("Let's use context: {:?}", context);
-        Ok(Text::new("What is the account ID?").prompt()?)
+        match inquire::CustomType::new("What is the account ID?").prompt() {
+            Ok(value) => Ok(Some(value)),
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => Ok(None),
+            Err(err) => Err(err.into()),
+        }
     }
 }
 
-fn main() {
-    let cli_offline_args = OfflineArgs::parse();
+fn main() -> color_eyre::Result<()> {
+    let mut cli_offline_args = OfflineArgs::parse();
     let context = (); // #[interactive_clap(input_context = ())]
-    let offline_args =
-        <OfflineArgs as interactive_clap::FromCli>::from_cli(Some(cli_offline_args), context);
-    println!("offline_args: {:?}", offline_args)
+    loop {
+        let offline_args =
+            <OfflineArgs as interactive_clap::FromCli>::from_cli(Some(cli_offline_args.clone()), context);
+        match offline_args {
+            ResultFromCli::Ok(Some(offline_args)) => {
+                println!(
+                    "Your console command:  {}",
+                    shell_words::join(&offline_args.to_cli_args())
+                );
+                return Ok(());
+            }
+            ResultFromCli::Ok(None) => {
+                println!("Goodbye!");
+                return Ok(());
+            }
+            ResultFromCli::Back => {
+                cli_offline_args = Default::default();
+            },
+            ResultFromCli::Err(offline_args, err) => {
+                if let Some(offline_args) = offline_args {
+                    println!(
+                        "Your console command:  {}",
+                        shell_words::join(&offline_args.to_cli_args())
+                    );
+                }
+                return Err(err);
+            }
+        }
+    }
 }

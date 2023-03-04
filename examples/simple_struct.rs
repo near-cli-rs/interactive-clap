@@ -6,16 +6,44 @@
 //                    ./simple_struct 30 QWE QWERTY => args: Ok(Args { age: 30, first_name: "QWE", second_name: "QWERTY" })
 // To learn more about the parameters, use "help" flag: ./simple_struct --help
 
-#[derive(Debug, interactive_clap::InteractiveClap)]
+use interactive_clap::{ResultFromCli, ToCliArgs};
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 struct Args {
     age: u64,
     first_name: String,
     second_name: String,
 }
 
-fn main() {
-    let cli_args = Args::parse();
+fn main() -> color_eyre::Result<()> {
+    let mut cli_args = Args::parse();
     let context = (); // default: input_context = ()
-    let args = <Args as interactive_clap::FromCli>::from_cli(Some(cli_args), context);
-    println!("args: {:?}", args)
+    loop {
+        let args = <Args as interactive_clap::FromCli>::from_cli(Some(cli_args), context);
+        match args {
+            ResultFromCli::Ok(Some(cli_args)) => {
+                println!(
+                    "Your console command:  {}",
+                    shell_words::join(&cli_args.to_cli_args())
+                );
+                return Ok(());
+            }
+            ResultFromCli::Ok(None) => {
+                println!("Goodbye!");
+                return Ok(());
+            }
+            ResultFromCli::Back => {
+                cli_args = Default::default();
+            }
+            ResultFromCli::Err(cli_args, err) => {
+                if let Some(cli_args) = cli_args {
+                    println!(
+                        "Your console command:  {}",
+                        shell_words::join(&cli_args.to_cli_args())
+                    );
+                }
+                return Err(err);
+            }
+        }
+    }
 }
