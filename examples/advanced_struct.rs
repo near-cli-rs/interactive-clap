@@ -10,9 +10,9 @@
 use interactive_clap::{ResultFromCli, ToCliArgs};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(skip_default_from_cli)]
+// #[interactive_clap(skip_default_from_cli)]
 struct Args {
-    #[interactive_clap(long = "age-full-years")] // hgfashdgfajdfsadajsdfh
+    #[interactive_clap(long = "age-full-years")]
     #[interactive_clap(skip_default_input_arg)]
     age: u64,
     #[interactive_clap(long)]
@@ -23,44 +23,44 @@ struct Args {
     second_name: String,
 }
 
-impl interactive_clap::FromCli for Args {
-    type FromCliContext = ();
-    type FromCliError = color_eyre::eyre::Error;
-    fn from_cli(
-        optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> ResultFromCli<<Self as interactive_clap::ToCli>::CliVariant, Self::FromCliError>
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let mut clap_variant = optional_clap_variant.unwrap_or_default();
-        if clap_variant.age.is_none() {
-            clap_variant.age = match Self::input_age(&context) {
-                Ok(Some(age)) => Some(age),
-                Ok(None) => return ResultFromCli::Ok(Some(clap_variant)),
-                Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let age = clap_variant.age.clone().expect("Unexpected error");
-        if clap_variant.first_name.is_none() {
-            clap_variant.first_name = match Self::input_first_name(&context) {
-                Ok(Some(first_name)) => Some(first_name),
-                Ok(None) => return ResultFromCli::Ok(Some(clap_variant)),
-                Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let first_name = clap_variant.first_name.clone().expect("Unexpected error");
-        if clap_variant.second_name.is_none() {
-            clap_variant.second_name = match Self::input_second_name(&context) {
-                Ok(Some(second_name)) => Some(second_name),
-                Ok(None) => return ResultFromCli::Ok(Some(clap_variant)),
-                Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let second_name = clap_variant.second_name.clone().expect("Unexpected error");
-        ResultFromCli::Ok(Some(clap_variant))
-    }
-}
+// impl interactive_clap::FromCli for Args {
+//     type FromCliContext = ();
+//     type FromCliError = color_eyre::eyre::Error;
+//     fn from_cli(
+//         optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+//         context: Self::FromCliContext,
+//     ) -> ResultFromCli<<Self as interactive_clap::ToCli>::CliVariant, Self::FromCliError>
+//     where
+//         Self: Sized + interactive_clap::ToCli,
+//     {
+//         let mut clap_variant = optional_clap_variant.unwrap_or_default();
+//         if clap_variant.age.is_none() {
+//             clap_variant.age = match Self::input_age(&context) {
+//                 Ok(Some(age)) => Some(age),
+//                 Ok(None) => return ResultFromCli::Ok(clap_variant),
+//                 Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
+//             };
+//         }
+//         let age = clap_variant.age.clone().expect("Unexpected error");
+//         if clap_variant.first_name.is_none() {
+//             clap_variant.first_name = match Self::input_first_name(&context) {
+//                 Ok(Some(first_name)) => Some(first_name),
+//                 Ok(None) => return ResultFromCli::Ok(clap_variant),
+//                 Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
+//             };
+//         }
+//         let first_name = clap_variant.first_name.clone().expect("Unexpected error");
+//         if clap_variant.second_name.is_none() {
+//             clap_variant.second_name = match Self::input_second_name(&context) {
+//                 Ok(Some(second_name)) => Some(second_name),
+//                 Ok(None) => return ResultFromCli::Ok(clap_variant),
+//                 Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
+//             };
+//         }
+//         let second_name = clap_variant.second_name.clone().expect("Unexpected error");
+//         ResultFromCli::Ok(clap_variant)
+//     }
+// }
 
 impl Args {
     fn input_age(_context: &()) -> color_eyre::eyre::Result<Option<u64>> {
@@ -92,14 +92,14 @@ fn main() -> color_eyre::Result<()> {
     loop {
         let args = <Args as interactive_clap::FromCli>::from_cli(Some(cli_args), context);
         match args {
-            ResultFromCli::Ok(Some(cli_args)) => {
+            ResultFromCli::Ok(cli_args) | ResultFromCli::Cancel(Some(cli_args)) => {
                 println!(
                     "Your console command:  {}",
                     shell_words::join(&cli_args.to_cli_args())
                 );
                 return Ok(());
             }
-            ResultFromCli::Ok(None) => {
+            ResultFromCli::Cancel(None) => {
                 println!("Goodbye!");
                 return Ok(());
             }

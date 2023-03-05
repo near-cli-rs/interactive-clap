@@ -108,14 +108,8 @@ pub fn fn_choose_variant(
                     use interactive_clap::SelectVariantOrBack;
                     use inquire::Select;
                     use strum::{EnumMessage, IntoEnumIterator};
-                    // fn prompt_variant<T>(prompt: &str) -> color_eyre::eyre::Result<Option<T>>
-                    // where
-                    // T: IntoEnumIterator + EnumMessage,
-                    // T: Copy + Clone,
-                    // {
                         let selected_variant = Select::new(
-                            // prompt,
-                            #literal.to_string().as_str(),
+                            #literal,
                             #command_discriminants::iter()
                                 .map(SelectVariantOrBack::Variant)
                                 #actions_push_back
@@ -123,25 +117,16 @@ pub fn fn_choose_variant(
                         )
                         .prompt();
                         match selected_variant {
-                            Ok(SelectVariantOrBack::Variant(variant)) => interactive_clap::ResultFromCli::Ok(Some(match variant {
+                            Ok(SelectVariantOrBack::Variant(variant)) => interactive_clap::ResultFromCli::Ok(match variant {
                                 #( #enum_variants, )*
-                            })),
+                            }),
                             Ok(SelectVariantOrBack::Back) => interactive_clap::ResultFromCli::Back,
                             Err(
                                 inquire::error::InquireError::OperationCanceled
                                 | inquire::error::InquireError::OperationInterrupted,
-                            ) => interactive_clap::ResultFromCli::Ok(None),
+                            ) => interactive_clap::ResultFromCli::Cancel(None),
                             Err(err) => interactive_clap::ResultFromCli::Err(None, err.into()),
                         }
-                    // }
-                    // let variant = if let Some(variant) = prompt_variant(#literal.to_string().as_str())? {
-                    //     variant
-                    // } else {
-                    //     return Ok(None);
-                    // };
-                    // let cli_variant = match variant {
-                    //
-                    // };
                 };
             }
         }
@@ -153,12 +138,6 @@ pub fn fn_choose_variant(
         <Self as interactive_clap::ToCli>::CliVariant,
         <Self as interactive_clap::FromCli>::FromCliError,
     > {
-            // loop {
-            //
-            //     if let Some(variant) = <Self as interactive_clap::FromCli>::from_cli(Some(cli_variant), context.clone())? {
-            //         return Ok(Some(variant));
-            //     }
-            // }
             #cli_variant
         }
     }

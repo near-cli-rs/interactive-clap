@@ -31,23 +31,23 @@ fn main() -> color_eyre::Result<()> {
     loop {
         let mode = <Mode as interactive_clap::FromCli>::from_cli(cli_mode.clone(), context);
         match mode {
-            ResultFromCli::Ok(Some(cli_mode)) => {
+            ResultFromCli::Ok(cli_mode) | ResultFromCli::Cancel(Some(cli_mode)) => {
                 println!(
                     "Your console command:  {}",
                     shell_words::join(&cli_mode.to_cli_args())
                 );
                 return Ok(());
             }
-            ResultFromCli::Ok(None) => {
+            ResultFromCli::Cancel(None) => {
                 println!("Goodbye!");
                 return Ok(());
             }
             ResultFromCli::Back => {}
-            ResultFromCli::Err(cli_args, err) => {
-                if let Some(cli_args) = cli_args {
+            ResultFromCli::Err(optional_cli_mode, err) => {
+                if let Some(cli_mode) = optional_cli_mode {
                     println!(
                         "Your console command:  {}",
-                        shell_words::join(&cli_args.to_cli_args())
+                        shell_words::join(&cli_mode.to_cli_args())
                     );
                 }
                 return Err(err);

@@ -31,7 +31,8 @@ pub trait ToCliArgs {
 }
 
 pub enum ResultFromCli<T, E> {
-    Ok(Option<T>),
+    Ok(T),
+    Cancel(Option<T>),
     Back,
     Err(Option<T>, E),
 }

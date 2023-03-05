@@ -21,14 +21,14 @@ fn main() -> color_eyre::Result<()> {
     loop {
         let args = <Args as interactive_clap::FromCli>::from_cli(Some(cli_args), context);
         match args {
-            ResultFromCli::Ok(Some(cli_args)) => {
+            ResultFromCli::Ok(cli_args) | ResultFromCli::Cancel(Some(cli_args)) => {
                 println!(
                     "Your console command:  {}",
                     shell_words::join(&cli_args.to_cli_args())
                 );
                 return Ok(());
             }
-            ResultFromCli::Ok(None) => {
+            ResultFromCli::Cancel(None) => {
                 println!("Goodbye!");
                 return Ok(());
             }

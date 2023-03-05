@@ -9,7 +9,6 @@
 
 use inquire::Select;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
-
 use interactive_clap::{ResultFromCli, SelectVariantOrBack, ToCliArgs};
 
 mod common;
@@ -19,10 +18,23 @@ mod common;
 // #[interactive_clap(skip_default_from_cli)]
 struct OnlineArgs {
     /// What is the name of the network
-    // #[interactive_clap(skip_default_input_arg)]
+    #[interactive_clap(skip_default_input_arg)]
     network_name: String,
     #[interactive_clap(subcommand)]
     submit: Submit,
+}
+
+impl OnlineArgs {
+    fn input_network_name(_context: &common::ConnectionConfig) -> color_eyre::eyre::Result<Option<String>> {
+        match inquire::Text::new("Input network name").prompt() {
+            Ok(value) => Ok(Some(value)),
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => Ok(None),
+            Err(err) => Err(err.into()),
+        }
+    }
 }
 
 // impl interactive_clap::FromCli for OnlineArgs {
@@ -40,7 +52,7 @@ struct OnlineArgs {
 //         if clap_variant.network_name.is_none() {
 //             clap_variant.network_name = match Self::input_network_name(&context) {
 //                 Ok(Some(network_name)) => Some(network_name),
-//                 Ok(None) => return ResultFromCli::Ok(Some(clap_variant)),
+//                 Ok(None) => return ResultFromCli::Cancel(Some(clap_variant)),
 //                 Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
 //             };
 //         }
@@ -50,26 +62,27 @@ struct OnlineArgs {
 //             network_name,
 //         };
 
-//         // let next_context = context.clone();
-
-//         match Submit::from_cli(clap_variant.submit, context) {
+//         match Submit::from_cli(clap_variant.submit.take(), context) {
 //             ResultFromCli::Ok(submit) => {
-//                 clap_variant.submit = submit;
+//                 clap_variant.submit = Some(submit);
+//                 ResultFromCli::Ok(clap_variant)
 //             }
-//             ResultFromCli::Back => return ResultFromCli::Back,
-//             ResultFromCli::Err(submit, err) => {
-//                 clap_variant.submit = submit;
-//                 return ResultFromCli::Err(Some(clap_variant), err);
+//             ResultFromCli::Cancel(optional_submit) => {
+//                 clap_variant.submit = optional_submit;
+//                 ResultFromCli::Cancel(Some(clap_variant))
+//             }
+//             ResultFromCli::Back => ResultFromCli::Back,
+//             ResultFromCli::Err(optional_submit, err) => {
+//                 clap_variant.submit = optional_submit;
+//                 ResultFromCli::Err(Some(clap_variant), err)
 //             }
 //         }
-//         ResultFromCli::Ok(Some(clap_variant))
+        
 //     }
 // }
 
 #[derive(Debug, EnumDiscriminants, Clone, clap::Parser)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
-// #[interactive_clap(context = common::ConnectionConfig)]
-// #[interactive_clap(skip_default_from_cli)]
 pub enum Submit {
     #[strum_discriminants(strum(message = "I want to send the transaction to the network"))]
     Send,
@@ -106,7 +119,7 @@ impl interactive_clap::FromCli for Submit {
         Self: Sized + interactive_clap::ToCli,
     {
         match optional_clap_variant {
-            Some(submit) => ResultFromCli::Ok(Some(submit)),
+            Some(submit) => ResultFromCli::Ok(submit),
             None => Self::choose_variant(context),
         }
     }
@@ -145,15 +158,15 @@ impl Submit {
         )
         .prompt()
         {
-            Ok(SelectVariantOrBack::Variant(variant)) => ResultFromCli::Ok(Some(match variant {
+            Ok(SelectVariantOrBack::Variant(variant)) => ResultFromCli::Ok(match variant {
                 SubmitDiscriminants::Send => CliSubmit::Send,
                 SubmitDiscriminants::Display => CliSubmit::Display,
-            })),
+            }),
             Ok(SelectVariantOrBack::Back) => ResultFromCli::Back,
             Err(
                 inquire::error::InquireError::OperationCanceled
                 | inquire::error::InquireError::OperationInterrupted,
-            ) => ResultFromCli::Ok(None),
+            ) => ResultFromCli::Cancel(None),
             Err(err) => ResultFromCli::Err(None, err.into()),
         }
     }
@@ -179,14 +192,14 @@ fn main() -> color_eyre::Result<()> {
             Some(cli_online_args),
             context.clone(),
         ) {
-            ResultFromCli::Ok(Some(cli_args)) => {
+            ResultFromCli::Ok(cli_args) | ResultFromCli::Cancel(Some(cli_args)) => {
                 println!(
                     "Your console command:  {}",
                     shell_words::join(&cli_args.to_cli_args())
                 );
                 return Ok(());
             }
-            ResultFromCli::Ok(None) => {
+            ResultFromCli::Cancel(None)=> {
                 println!("Goodbye!");
                 return Ok(());
             }

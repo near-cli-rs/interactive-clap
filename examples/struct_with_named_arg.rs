@@ -29,55 +29,29 @@ struct Account {
 //     {
 //         let mut clap_variant = optional_clap_variant.unwrap_or_default();
 //         let new_context_scope = InteractiveClapContextScopeForAccount {};
-//         match <Sender as interactive_clap::FromCli>::from_cli(
-//             match &clap_variant.account {
-//                 Some(ClapNamedArgSenderForAccount::Account(cli_arg)) => Some(cli_arg.clone()),
-//                 None => None,
-//             },
-//             context.into(),
-//         ) {
-//             ResultFromCli::Ok(optional_cli_sender) => {
-//                 match optional_cli_sender {
-//                     Some(cli_sender) => {
-//                         clap_variant.account = Some(ClapNamedArgSenderForAccount::Account(cli_sender));
-//                     }
-//                     None => {return ResultFromCli::Err(Some(clap_variant), color_eyre::Report::msg("Unexpected error"));}
-//                 }
+//         let optional_account = match clap_variant.account.take() {
+//             Some(ClapNamedArgSenderForAccount::Account(cli_arg)) => Some(cli_arg),
+//             None => None,
+//         };
+//         match <Sender as interactive_clap::FromCli>::from_cli(optional_account, context.into()) {
+//             ResultFromCli::Ok(cli_sender) => {
+//                 clap_variant.account = Some(ClapNamedArgSenderForAccount::Account(cli_sender));
 //             }
-//             ResultFromCli::Back => return ResultFromCli::Back,
+//             ResultFromCli::Cancel(optional_cli_sender) => {
+//                 clap_variant.account =
+//                     optional_cli_sender.map(ClapNamedArgSenderForAccount::Account);
+//                 return ResultFromCli::Cancel(Some(clap_variant));
+//             }
+//             ResultFromCli::Back => {
+//                 return ResultFromCli::Back;
+//             }
 //             ResultFromCli::Err(optional_cli_sender, err) => {
-//                 match optional_cli_sender {
-//                     Some(cli_sender) => {
-//                         clap_variant.account = Some(ClapNamedArgSenderForAccount::Account(cli_sender));
-//                     }
-//                     None => {
-//                         clap_variant.account = None;
-//                     }
-//                 }
+//                 clap_variant.account =
+//                     optional_cli_sender.map(ClapNamedArgSenderForAccount::Account);
 //                 return ResultFromCli::Err(Some(clap_variant), err);
 //             }
 //         };
-
-//         // let account = <Sender as interactive_clap::FromCli>::from_cli(
-//         //     optional_clap_variant.and_then(|clap_variant| match clap_variant.account {
-//         //         Some(ClapNamedArgSenderForAccount::Account(cli_arg)) => Some(cli_arg),
-//         //         None => None,
-//         //     }),
-//         //     context.into(),
-//         // );
-
-//         // match account {
-//         //     ResultFromCli::Ok(account) => {
-//         //         clap_variant.account = Some(ClapNamedArgSenderForAccount::Account(account.expect("msg")));
-//         //     }
-//         //     ResultFromCli::Back => return ResultFromCli::Back,
-//         //     ResultFromCli::Err(account, err) => {
-//         //         clap_variant.account = Some(ClapNamedArgSenderForAccount::Account(account.expect("msg")));
-//         //         return ResultFromCli::Err(Some(clap_variant), err);
-//         //     }
-//         // }
-
-//         ResultFromCli::Ok(Some(clap_variant))
+//         ResultFromCli::Ok(clap_variant)
 //     }
 // }
 
@@ -87,24 +61,20 @@ pub struct Sender {
     pub sender_account_id: String,
 }
 
-// impl interactive_clap::ToCli for ClapNamedArgSenderForAccount {
-//     type CliVariant = ClapNamedArgSenderForAccount;
-// }
-
 fn main() -> color_eyre::Result<()> {
     let mut cli_account = Account::parse();
     let context = (); // default: input_context = ()
     loop {
         let account = <Account as interactive_clap::FromCli>::from_cli(Some(cli_account), context);
         match account {
-            ResultFromCli::Ok(Some(cli_account)) => {
+            ResultFromCli::Ok(cli_account) | ResultFromCli::Cancel(Some(cli_account)) => {
                 println!(
                     "Your console command:  {}",
                     shell_words::join(&cli_account.to_cli_args())
                 );
                 return Ok(());
             }
-            ResultFromCli::Ok(None) => {
+            ResultFromCli::Cancel(None) => {
                 println!("Goodbye!");
                 return Ok(());
             }

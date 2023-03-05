@@ -95,25 +95,25 @@ fn main() -> color_eyre::Result<()> {
         let offline_args =
             <OfflineArgs as interactive_clap::FromCli>::from_cli(Some(cli_offline_args.clone()), context);
         match offline_args {
-            ResultFromCli::Ok(Some(offline_args)) => {
+            ResultFromCli::Ok(cli_offline_args) | ResultFromCli::Cancel(Some(cli_offline_args)) => {
                 println!(
                     "Your console command:  {}",
-                    shell_words::join(&offline_args.to_cli_args())
+                    shell_words::join(&cli_offline_args.to_cli_args())
                 );
                 return Ok(());
             }
-            ResultFromCli::Ok(None) => {
+            ResultFromCli::Cancel(None) => {
                 println!("Goodbye!");
                 return Ok(());
             }
             ResultFromCli::Back => {
                 cli_offline_args = Default::default();
             },
-            ResultFromCli::Err(offline_args, err) => {
-                if let Some(offline_args) = offline_args {
+            ResultFromCli::Err(cli_offline_args, err) => {
+                if let Some(cli_offline_args) = cli_offline_args {
                     println!(
                         "Your console command:  {}",
-                        shell_words::join(&offline_args.to_cli_args())
+                        shell_words::join(&cli_offline_args.to_cli_args())
                     );
                 }
                 return Err(err);
