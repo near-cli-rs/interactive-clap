@@ -50,14 +50,31 @@ pub fn fn_choose_variant(
         }
         if ast_attrs.contains(&"disable_strum_discriminants") {
             match &variants[0].fields {
-                syn::Fields::Unnamed(_) => {
+                syn::Fields::Unnamed(fields_unnamed) => {
+                    let ty = &fields_unnamed.unnamed[0].ty;
                     cli_variant = quote! {
-                        let cli_variant = #cli_command::#variant_ident(Default::default());
-                    };
+                        let cli_args =
+                        match <#ty as interactive_clap::FromCli>::from_cli(None, context) {
+                            interactive_clap::ResultFromCli::Ok(cli_args) => cli_args,
+                            interactive_clap::ResultFromCli::Cancel(optional_cli_args) => {
+                                return interactive_clap::ResultFromCli::Cancel(Some(#cli_command::#variant_ident(
+                                    optional_cli_args.unwrap_or_default(),
+                                )));
+                            }
+                            interactive_clap::ResultFromCli::Back => return interactive_clap::ResultFromCli::Back,
+                            interactive_clap::ResultFromCli::Err(optional_cli_args, err) => {
+                                return interactive_clap::ResultFromCli::Err(
+                                    Some(#cli_command::#variant_ident(optional_cli_args.unwrap_or_default())),
+                                    err,
+                                );
+                            }
+                        };
+                        interactive_clap::ResultFromCli::Ok(#cli_command::#variant_ident(cli_args))
+                    }
                 }
                 syn::Fields::Unit => {
                     cli_variant = quote! {
-                        let cli_variant = #cli_command::#variant_ident;
+                        interactive_clap::ResultFromCli::Ok(#cli_command::#variant_ident)
                     };
                 }
                 _ => abort_call_site!("Only option `Fields::Unnamed` or `Fields::Unit` is needed"),
@@ -91,9 +108,28 @@ pub fn fn_choose_variant(
                     let variant_ident = &variant.ident;
 
                     match &variant.fields {
-                        syn::Fields::Unnamed(_) => {
+                        syn::Fields::Unnamed(fields_unnamed) => {
+                            let ty = &fields_unnamed.unnamed[0].ty;
                             quote! {
-                                #command_discriminants::#variant_ident => #cli_command::#variant_ident(Default::default())
+                                #command_discriminants::#variant_ident => {
+                                    let cli_args =
+                                    match <#ty as interactive_clap::FromCli>::from_cli(None, context) {
+                                        interactive_clap::ResultFromCli::Ok(cli_args) => cli_args,
+                                        interactive_clap::ResultFromCli::Cancel(optional_cli_args) => {
+                                            return interactive_clap::ResultFromCli::Cancel(Some(#cli_command::#variant_ident(
+                                                optional_cli_args.unwrap_or_default(),
+                                            )));
+                                        }
+                                        interactive_clap::ResultFromCli::Back => return interactive_clap::ResultFromCli::Back,
+                                        interactive_clap::ResultFromCli::Err(optional_cli_args, err) => {
+                                            return interactive_clap::ResultFromCli::Err(
+                                                Some(#cli_command::#variant_ident(optional_cli_args.unwrap_or_default())),
+                                                err,
+                                            );
+                                        }
+                                    };
+                                    #cli_command::#variant_ident(cli_args)
+                                }
                             }
                         },
                         syn::Fields::Unit => {
@@ -108,25 +144,25 @@ pub fn fn_choose_variant(
                     use interactive_clap::SelectVariantOrBack;
                     use inquire::Select;
                     use strum::{EnumMessage, IntoEnumIterator};
-                        let selected_variant = Select::new(
-                            #literal,
-                            #command_discriminants::iter()
-                                .map(SelectVariantOrBack::Variant)
-                                #actions_push_back
-                                .collect(),
-                        )
-                        .prompt();
-                        match selected_variant {
-                            Ok(SelectVariantOrBack::Variant(variant)) => interactive_clap::ResultFromCli::Ok(match variant {
-                                #( #enum_variants, )*
-                            }),
-                            Ok(SelectVariantOrBack::Back) => interactive_clap::ResultFromCli::Back,
-                            Err(
-                                inquire::error::InquireError::OperationCanceled
-                                | inquire::error::InquireError::OperationInterrupted,
-                            ) => interactive_clap::ResultFromCli::Cancel(None),
-                            Err(err) => interactive_clap::ResultFromCli::Err(None, err.into()),
-                        }
+                    let selected_variant = Select::new(
+                        #literal,
+                        #command_discriminants::iter()
+                            .map(SelectVariantOrBack::Variant)
+                            #actions_push_back
+                            .collect(),
+                    )
+                    .prompt();
+                    match selected_variant {
+                        Ok(SelectVariantOrBack::Variant(variant)) => interactive_clap::ResultFromCli::Ok(match variant {
+                            #( #enum_variants, )*
+                        }),
+                        Ok(SelectVariantOrBack::Back) => interactive_clap::ResultFromCli::Back,
+                        Err(
+                            inquire::error::InquireError::OperationCanceled
+                            | inquire::error::InquireError::OperationInterrupted,
+                        ) => interactive_clap::ResultFromCli::Cancel(None),
+                        Err(err) => interactive_clap::ResultFromCli::Err(None, err.into()),
+                    }
                 };
             }
         }
@@ -134,7 +170,7 @@ pub fn fn_choose_variant(
     let input_context = interactive_clap_attrs_context.get_input_context_dir();
 
     quote! {
-        pub fn choose_variant(_context: #input_context) -> interactive_clap::ResultFromCli<
+        pub fn choose_variant(context: #input_context) -> interactive_clap::ResultFromCli<
         <Self as interactive_clap::ToCli>::CliVariant,
         <Self as interactive_clap::FromCli>::FromCliError,
     > {
