@@ -40,7 +40,7 @@ impl interactive_clap::FromCli for Args {
                 Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let age = clap_variant.age.clone().expect("Unexpected error");
+        let age = clap_variant.age;
         if clap_variant.first_name.is_none() {
             clap_variant.first_name = match Self::input_first_name(&context) {
                 Ok(Some(first_name)) => Some(first_name),
