@@ -8,8 +8,8 @@
 // To learn more about the parameters, use "help" flag: ./to_cli_args --help
 
 use inquire::Select;
-use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 use interactive_clap::{ResultFromCli, SelectVariantOrBack, ToCliArgs};
+use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 mod common;
 
@@ -25,7 +25,9 @@ struct OnlineArgs {
 }
 
 impl OnlineArgs {
-    fn input_network_name(_context: &common::ConnectionConfig) -> color_eyre::eyre::Result<Option<String>> {
+    fn input_network_name(
+        _context: &common::ConnectionConfig,
+    ) -> color_eyre::eyre::Result<Option<String>> {
         match inquire::Text::new("Input network name").prompt() {
             Ok(value) => Ok(Some(value)),
             Err(
@@ -77,7 +79,7 @@ impl OnlineArgs {
 //                 ResultFromCli::Err(Some(clap_variant), err)
 //             }
 //         }
-        
+
 //     }
 // }
 
@@ -85,7 +87,7 @@ impl OnlineArgs {
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 pub enum Submit {
     #[strum_discriminants(strum(message = "I want to send the transaction to the network"))]
-    Send,
+    Send(Args),
     #[strum_discriminants(strum(
         message = "I only want to print base64-encoded transaction for JSON RPC input and exit"
     ))]
@@ -94,14 +96,14 @@ pub enum Submit {
 
 #[derive(Debug, EnumDiscriminants, Clone, clap::Parser)]
 pub enum CliSubmit {
-    Send,
+    Send(CliArgs),
     Display,
 }
 
 impl From<Submit> for CliSubmit {
     fn from(command: Submit) -> Self {
         match command {
-            Submit::Send => Self::Send,
+            Submit::Send(args) => Self::Send(args.into()),
             Submit::Display => Self::Display,
         }
     }
@@ -128,8 +130,8 @@ impl interactive_clap::FromCli for Submit {
 impl interactive_clap::ToCliArgs for CliSubmit {
     fn to_cli_args(&self) -> std::collections::VecDeque<String> {
         match self {
-            Self::Send => {
-                let mut args = std::collections::VecDeque::new();
+            Self::Send(cli_args) => {
+                let mut args = cli_args.to_cli_args();
                 args.push_front("send".to_owned());
                 args
             }
@@ -144,7 +146,7 @@ impl interactive_clap::ToCliArgs for CliSubmit {
 
 impl Submit {
     fn choose_variant(
-        _context: common::ConnectionConfig,
+        context: common::ConnectionConfig,
     ) -> ResultFromCli<
         <Self as interactive_clap::ToCli>::CliVariant,
         <Self as interactive_clap::FromCli>::FromCliError,
@@ -159,7 +161,33 @@ impl Submit {
         .prompt()
         {
             Ok(SelectVariantOrBack::Variant(variant)) => ResultFromCli::Ok(match variant {
-                SubmitDiscriminants::Send => CliSubmit::Send,
+                SubmitDiscriminants::Send => {
+                    let default_cli_args = CliArgs {
+                        ..Default::default()
+                    };
+                    let cli_args = match <Args as interactive_clap::FromCli>::from_cli(
+                        Some(default_cli_args),
+                        context,
+                    ) {
+                        ResultFromCli::Ok(cli_args) => {
+                            cli_args
+                        }
+                        ResultFromCli::Cancel(Some(cli_args)) => {
+                            return ResultFromCli::Cancel(Some(CliSubmit::Send(cli_args)));
+                        }
+                        ResultFromCli::Cancel(None) => {
+                            return ResultFromCli::Cancel(None);
+                        }
+                        ResultFromCli::Back => return ResultFromCli::Back,
+                        ResultFromCli::Err(Some(cli_args), err) => {
+                            return ResultFromCli::Err(Some(CliSubmit::Send(cli_args)), err);
+                        }
+                        ResultFromCli::Err(None, err) => {
+                            return ResultFromCli::Err(None, err);
+                        }
+                    };
+                    CliSubmit::Send(cli_args)
+                }
                 SubmitDiscriminants::Display => CliSubmit::Display,
             }),
             Ok(SelectVariantOrBack::Back) => ResultFromCli::Back,
@@ -184,22 +212,31 @@ impl std::fmt::Display for SubmitDiscriminants {
     }
 }
 
+#[derive(Debug, Clone, interactive_clap::InteractiveClap, clap::Args)]
+#[interactive_clap(context = common::ConnectionConfig)]
+pub struct Args {
+    age: u64,
+    first_name: String,
+    second_name: String,
+}
+
 fn main() -> color_eyre::Result<()> {
     let mut cli_online_args = OnlineArgs::parse();
     let context = common::ConnectionConfig::Testnet; //#[interactive_clap(context = common::ConnectionConfig)]
-    loop {
+    let cli_args = loop {
         match <OnlineArgs as interactive_clap::FromCli>::from_cli(
             Some(cli_online_args),
             context.clone(),
         ) {
-            ResultFromCli::Ok(cli_args) | ResultFromCli::Cancel(Some(cli_args)) => {
+            ResultFromCli::Ok(cli_args) => break cli_args,
+            ResultFromCli::Cancel(Some(cli_args)) => {
                 println!(
                     "Your console command:  {}",
                     shell_words::join(&cli_args.to_cli_args())
                 );
                 return Ok(());
             }
-            ResultFromCli::Cancel(None)=> {
+            ResultFromCli::Cancel(None) => {
                 println!("Goodbye!");
                 return Ok(());
             }
@@ -216,5 +253,11 @@ fn main() -> color_eyre::Result<()> {
                 return Err(err);
             }
         }
-    }
+    };
+    println!("cli_args: {:?}", cli_args);
+    println!(
+        "Your console command:  {}",
+        shell_words::join(&cli_args.to_cli_args())
+    );
+    Ok(())
 }
