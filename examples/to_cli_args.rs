@@ -162,30 +162,22 @@ impl Submit {
         {
             Ok(SelectVariantOrBack::Variant(variant)) => ResultFromCli::Ok(match variant {
                 SubmitDiscriminants::Send => {
-                    let default_cli_args = CliArgs {
-                        ..Default::default()
-                    };
-                    let cli_args = match <Args as interactive_clap::FromCli>::from_cli(
-                        Some(default_cli_args),
-                        context,
-                    ) {
-                        ResultFromCli::Ok(cli_args) => {
-                            cli_args
-                        }
-                        ResultFromCli::Cancel(Some(cli_args)) => {
-                            return ResultFromCli::Cancel(Some(CliSubmit::Send(cli_args)));
-                        }
-                        ResultFromCli::Cancel(None) => {
-                            return ResultFromCli::Cancel(None);
-                        }
-                        ResultFromCli::Back => return ResultFromCli::Back,
-                        ResultFromCli::Err(Some(cli_args), err) => {
-                            return ResultFromCli::Err(Some(CliSubmit::Send(cli_args)), err);
-                        }
-                        ResultFromCli::Err(None, err) => {
-                            return ResultFromCli::Err(None, err);
-                        }
-                    };
+                    let cli_args =
+                        match <Args as interactive_clap::FromCli>::from_cli(None, context) {
+                            ResultFromCli::Ok(cli_args) => cli_args,
+                            ResultFromCli::Cancel(optional_cli_args) => {
+                                return ResultFromCli::Cancel(Some(CliSubmit::Send(
+                                    optional_cli_args.unwrap_or_default(),
+                                )));
+                            }
+                            ResultFromCli::Back => return ResultFromCli::Back,
+                            ResultFromCli::Err(optional_cli_args, err) => {
+                                return ResultFromCli::Err(
+                                    Some(CliSubmit::Send(optional_cli_args.unwrap_or_default())),
+                                    err,
+                                );
+                            }
+                        };
                     CliSubmit::Send(cli_args)
                 }
                 SubmitDiscriminants::Display => CliSubmit::Display,

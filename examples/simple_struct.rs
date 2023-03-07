@@ -9,7 +9,7 @@
 use interactive_clap::{ResultFromCli, ToCliArgs};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-struct Args {
+pub struct Args {
     age: u64,
     first_name: String,
     second_name: String,
