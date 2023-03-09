@@ -167,10 +167,16 @@ pub fn fn_choose_variant(
             }
         }
     };
-    let input_context = interactive_clap_attrs_context.get_input_context_dir();
+    // let input_context = interactive_clap_attrs_context.get_input_context_dir();
+    let context = match &interactive_clap_attrs_context.output_context_dir {
+        Some(output_context_dir) => quote! {#output_context_dir},
+        None => interactive_clap_attrs_context
+            .clone()
+            .get_input_context_dir()
+    };
 
     quote! {
-        pub fn choose_variant(context: #input_context) -> interactive_clap::ResultFromCli<
+        pub fn choose_variant(context: #context) -> interactive_clap::ResultFromCli<
         <Self as interactive_clap::ToCli>::CliVariant,
         <Self as interactive_clap::FromCli>::FromCliError,
     > {

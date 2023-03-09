@@ -65,6 +65,12 @@ pub fn from_cli_for_enum(
     let input_context_dir = interactive_clap_attrs_context
         .clone()
         .get_input_context_dir();
+    // let context = match &interactive_clap_attrs_context.output_context_dir {
+    //     Some(output_context_dir) => quote! {#output_context_dir},
+    //     None => interactive_clap_attrs_context
+    //         .clone()
+    //         .get_input_context_dir()
+    // };
 
     quote! {
         impl interactive_clap::FromCli for #name {
@@ -77,7 +83,7 @@ pub fn from_cli_for_enum(
                 match optional_clap_variant {
                     // #(#from_cli_variants)*
                     Some(clap_variant) => interactive_clap::ResultFromCli::Ok(clap_variant),
-                    None => Self::choose_variant(context.clone()),
+                    None => Self::choose_variant(context.into()),
                 }
             }
         }

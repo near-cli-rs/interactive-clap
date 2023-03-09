@@ -237,7 +237,7 @@ fn field_value_subcommand(
                             Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
                         };
                         let output_context = #output_context_dir::from(new_context);
-                        match <#ty as interactive_clap::FromCli>::from_cli(clap_variant.#ident_field.take(), output_context()) {
+                        match <#ty as interactive_clap::FromCli>::from_cli(clap_variant.#ident_field.take(), output_context) {
                             interactive_clap::ResultFromCli::Ok(cli_field) => {
                                 clap_variant.#ident_field = Some(cli_field);
                             }
@@ -250,7 +250,7 @@ fn field_value_subcommand(
                                 clap_variant.#ident_field = option_cli_field;
                                 return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
                             }
-                            }
+                        }
                     }
                 },
                 None => quote! {
