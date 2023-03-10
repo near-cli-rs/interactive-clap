@@ -172,7 +172,7 @@ pub fn fn_choose_variant(
         Some(output_context_dir) => quote! {#output_context_dir},
         None => interactive_clap_attrs_context
             .clone()
-            .get_input_context_dir()
+            .get_input_context_dir(),
     };
 
     quote! {
@@ -180,7 +180,7 @@ pub fn fn_choose_variant(
         <Self as interactive_clap::ToCli>::CliVariant,
         <Self as interactive_clap::FromCli>::FromCliError,
     > {
-            #cli_variant
-        }
+        #cli_variant
+    }
     }
 }
