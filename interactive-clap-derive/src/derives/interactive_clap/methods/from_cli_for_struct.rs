@@ -237,53 +237,39 @@ fn field_value_subcommand(
                             Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
                         };
                         let output_context = #output_context_dir::from(new_context);
-                        loop {
-                            match <#ty as interactive_clap::FromCli>::from_cli(clap_variant.#ident_field.take(), output_context.clone()) {
-                                interactive_clap::ResultFromCli::Ok(cli_field) => {
-                                    clap_variant.#ident_field = Some(cli_field);
-                                    break;
-                                }
-                                interactive_clap::ResultFromCli::Cancel(option_cli_field) => {
-                                    clap_variant.#ident_field = option_cli_field;
-                                    return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
-                                }
-                                interactive_clap::ResultFromCli::Back => {
-                                    if let interactive_clap::ResultFromCli::Back = #ty::choose_variant(output_context.clone().into()) {
-                                        return interactive_clap::ResultFromCli::Back;
-                                    }
-                                },
-                                interactive_clap::ResultFromCli::Err(option_cli_field, err) => {
-                                    clap_variant.#ident_field = option_cli_field;
-                                    return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
-                                }
+                        match <#ty as interactive_clap::FromCli>::from_cli(clap_variant.#ident_field.take(), output_context) {
+                            interactive_clap::ResultFromCli::Ok(cli_field) => {
+                                clap_variant.#ident_field = Some(cli_field);
+                            }
+                            interactive_clap::ResultFromCli::Cancel(option_cli_field) => {
+                                clap_variant.#ident_field = option_cli_field;
+                                return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
+                            }
+                            interactive_clap::ResultFromCli::Back => return interactive_clap::ResultFromCli::Back,
+                            interactive_clap::ResultFromCli::Err(option_cli_field, err) => {
+                                clap_variant.#ident_field = option_cli_field;
+                                return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
                             }
                         }
                     }
                 },
                 None => quote! {
-                    loop {
-                        match <#ty as interactive_clap::FromCli>::from_cli(clap_variant.#ident_field.take(), context.clone().into()) {
-                            interactive_clap::ResultFromCli::Ok(cli_field) => {
-                                clap_variant.#ident_field = Some(cli_field);
-                                break;
-                            }
-                            interactive_clap::ResultFromCli::Cancel(option_cli_field) => {
-                                clap_variant.#ident_field = option_cli_field;
-                                return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
-                            }
-                            interactive_clap::ResultFromCli::Cancel(option_cli_field) => {
-                                clap_variant.#ident_field = option_cli_field;
-                                return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
-                            }
-                            interactive_clap::ResultFromCli::Back => {
-                                if let interactive_clap::ResultFromCli::Back = #ty::choose_variant(context.clone()) {
-                                    return interactive_clap::ResultFromCli::Back;
-                                }
-                            },
-                            interactive_clap::ResultFromCli::Err(option_cli_field, err) => {
-                                clap_variant.#ident_field = option_cli_field;
-                                return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
-                            }
+                    match <#ty as interactive_clap::FromCli>::from_cli(clap_variant.#ident_field.take(), context.into()) {
+                        interactive_clap::ResultFromCli::Ok(cli_field) => {
+                            clap_variant.#ident_field = Some(cli_field);
+                        }
+                        interactive_clap::ResultFromCli::Cancel(option_cli_field) => {
+                            clap_variant.#ident_field = option_cli_field;
+                            return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
+                        }
+                        interactive_clap::ResultFromCli::Cancel(option_cli_field) => {
+                            clap_variant.#ident_field = option_cli_field;
+                            return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
+                        }
+                        interactive_clap::ResultFromCli::Back => return interactive_clap::ResultFromCli::Back,
+                        interactive_clap::ResultFromCli::Err(option_cli_field, err) => {
+                            clap_variant.#ident_field = option_cli_field;
+                            return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
                         }
                     }
                 }
