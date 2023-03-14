@@ -11,18 +11,20 @@ use interactive_clap::{ResultFromCli, ToCliArgs};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
-#[strum_discriminants(derive(EnumMessage, EnumIter))]                   // Comment the code to automatically select the first option
-// #[interactive_clap(disable_strum_discriminants)]                     // Uncomment the code to automatically select the first option 
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+// Comment the code to automatically select the first option
+// #[interactive_clap(disable_strum_discriminants)]                     // Uncomment the code to automatically select the first option
 ///To construct a transaction you will need to provide information about sender (signer) and receiver accounts, and actions that needs to be performed.
 ///Do you want to derive some information required for transaction construction automatically querying it online?
 pub enum Mode {
     /// Prepare and, optionally, submit a new transaction with online mode
-    #[strum_discriminants(strum(message = "Yes, I keep it simple"))]   // Comment the code to automatically select the first option
+    #[strum_discriminants(strum(message = "Yes, I keep it simple"))]
+    // Comment the code to automatically select the first option
     Network(Args),
     /// Prepare and, optionally, submit a new transaction with offline mode
     #[strum_discriminants(strum(
         message = "No, I want to work in no-network (air-gapped) environment"
-    ))]                                                                // Comment the code to automatically select the first option
+    ))] // Comment the code to automatically select the first option
     Offline,
 }
 

@@ -54,17 +54,20 @@ fn main() -> color_eyre::Result<()> {
     let mut cli_operation_mode = OperationMode::parse();
     let context = (); // default: input_context = ()
     loop {
-        let operation_mode =
-            <OperationMode as interactive_clap::FromCli>::from_cli(Some(cli_operation_mode), context);
+        let operation_mode = <OperationMode as interactive_clap::FromCli>::from_cli(
+            Some(cli_operation_mode),
+            context,
+        );
         match operation_mode {
-            ResultFromCli::Ok(cli_operation_mode) | ResultFromCli::Cancel(Some(cli_operation_mode)) => {
+            ResultFromCli::Ok(cli_operation_mode)
+            | ResultFromCli::Cancel(Some(cli_operation_mode)) => {
                 println!(
                     "Your console command:  {}",
                     shell_words::join(&cli_operation_mode.to_cli_args())
                 );
                 return Ok(());
             }
-            ResultFromCli::Cancel(None)=> {
+            ResultFromCli::Cancel(None) => {
                 println!("Goodbye!");
                 return Ok(());
             }

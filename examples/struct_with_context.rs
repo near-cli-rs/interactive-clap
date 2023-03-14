@@ -92,8 +92,10 @@ fn main() -> color_eyre::Result<()> {
     let mut cli_offline_args = OfflineArgs::parse();
     let context = (); // #[interactive_clap(input_context = ())]
     loop {
-        let offline_args =
-            <OfflineArgs as interactive_clap::FromCli>::from_cli(Some(cli_offline_args.clone()), context);
+        let offline_args = <OfflineArgs as interactive_clap::FromCli>::from_cli(
+            Some(cli_offline_args.clone()),
+            context,
+        );
         match offline_args {
             ResultFromCli::Ok(cli_offline_args) | ResultFromCli::Cancel(Some(cli_offline_args)) => {
                 println!(
@@ -108,7 +110,7 @@ fn main() -> color_eyre::Result<()> {
             }
             ResultFromCli::Back => {
                 cli_offline_args = Default::default();
-            },
+            }
             ResultFromCli::Err(cli_offline_args, err) => {
                 if let Some(cli_offline_args) = cli_offline_args {
                     println!(
