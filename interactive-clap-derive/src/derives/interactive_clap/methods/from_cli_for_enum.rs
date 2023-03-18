@@ -30,19 +30,20 @@ pub fn from_cli_for_enum(
                         Some(#cli_name::#variant_ident(inner_cli_args)) => {
                             type Alias = <#name as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope;
                             let new_context_scope = Alias::#variant_ident;
-                            let new_context = match #context_name::from_previous_context(context, &new_context_scope) {
+                            let new_context = match #context_name::from_previous_context(context.clone(), &new_context_scope) {
                                 Ok(new_context) => new_context,
                                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(#cli_name::#variant_ident(inner_cli_args)), err),
                             };
-                                let output_context = #output_context_dir::from(new_context);
+                            let output_context = #output_context_dir::from(new_context);
                             let cli_inner_args = <#ty as interactive_clap::FromCli>::from_cli(Some(inner_cli_args), output_context);
                             match cli_inner_args {
                                 interactive_clap::ResultFromCli::Ok(cli_args) => {
                                     interactive_clap::ResultFromCli::Ok(#cli_name::#variant_ident(cli_args))
                                 }
                                 interactive_clap::ResultFromCli::Back => {
-                                    interactive_clap::ResultFromCli::Back
-                                }
+                                    optional_clap_variant = None;
+                                    continue;
+                                },
                                 interactive_clap::ResultFromCli::Cancel(Some(cli_args)) => {
                                     interactive_clap::ResultFromCli::Cancel(Some(#cli_name::#variant_ident(cli_args)))
                                 }
@@ -66,8 +67,9 @@ pub fn from_cli_for_enum(
                                     interactive_clap::ResultFromCli::Ok(#cli_name::#variant_ident(cli_args))
                                 }
                                 interactive_clap::ResultFromCli::Back => {
-                                    interactive_clap::ResultFromCli::Back
-                                }
+                                    optional_clap_variant = None;
+                                    continue;
+                                },
                                 interactive_clap::ResultFromCli::Cancel(Some(cli_args)) => {
                                     interactive_clap::ResultFromCli::Cancel(Some(#cli_name::#variant_ident(cli_args)))
                                 }
@@ -103,12 +105,20 @@ pub fn from_cli_for_enum(
             type FromCliContext = #input_context_dir;
             type FromCliError = color_eyre::eyre::Error;
             fn from_cli(
-                optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+                mut optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
                 context: Self::FromCliContext,
             ) -> interactive_clap::ResultFromCli<<Self as interactive_clap::ToCli>::CliVariant, Self::FromCliError> where Self: Sized + interactive_clap::ToCli {
-                match optional_clap_variant {
-                    #(#from_cli_variants)*
-                    None => Self::choose_variant(context.into()),
+                loop {
+                    return match optional_clap_variant {
+                        #(#from_cli_variants)*
+                        None => match Self::choose_variant(context.clone()) {
+                            interactive_clap::ResultFromCli::Ok(cli_args) => {
+                                optional_clap_variant = Some(cli_args);
+                                continue;
+                            },
+                            result => return result,
+                        },
+                    }
                 }
             }
         }

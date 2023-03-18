@@ -16,7 +16,6 @@ pub fn fn_choose_variant(
         syn::Ident::new(&format!("{}Discriminants", name), Span::call_site());
     let cli_command = syn::Ident::new(&format!("Cli{}", name), Span::call_site());
 
-    let variant_ident = &variants[0].ident;
     let mut cli_variant = quote!();
     let mut ast_attrs: Vec<&str> = std::vec::Vec::new();
 
@@ -25,13 +24,7 @@ pub fn fn_choose_variant(
             if attr.path.is_ident("interactive_clap") {
                 for attr_token in attr.tokens.clone() {
                     if let proc_macro2::TokenTree::Group(group) = attr_token {
-                        if group
-                            .stream()
-                            .to_string()
-                            .contains("disable_strum_discriminants")
-                        {
-                            ast_attrs.push("disable_strum_discriminants");
-                        } else if group.stream().to_string().contains("disable_back") {
+                        if group.stream().to_string().contains("disable_back") {
                             ast_attrs.push("disable_back");
                         };
                     }
@@ -47,134 +40,84 @@ pub fn fn_choose_variant(
                 }
             };
         }
-        if ast_attrs.contains(&"disable_strum_discriminants") {
-            match &variants[0].fields {
-                syn::Fields::Unnamed(fields_unnamed) => {
-                    let ty = &fields_unnamed.unnamed[0].ty;
-                    cli_variant = quote! {
-                        let cli_args =
-                        match <#ty as interactive_clap::FromCli>::from_cli(None, context) {
-                            interactive_clap::ResultFromCli::Ok(cli_args) => cli_args,
-                            interactive_clap::ResultFromCli::Cancel(optional_cli_args) => {
-                                return interactive_clap::ResultFromCli::Cancel(Some(#cli_command::#variant_ident(
-                                    optional_cli_args.unwrap_or_default(),
-                                )));
+        if ast_attrs.contains(&"strum_discriminants") {
+            let doc_attrs = ast
+                .attrs
+                .iter()
+                .filter(|attr| attr.path.is_ident("doc"))
+                .map(|attr| {
+                    let mut literal_string = String::new();
+                    for attr_token in attr.tokens.clone() {
+                        if let proc_macro2::TokenTree::Literal(literal) = attr_token {
+                            literal_string = literal.to_string();
+                        }
+                    }
+                    literal_string
+                })
+                .collect::<Vec<_>>();
+            let literal_vec = doc_attrs
+                .iter()
+                .map(|s| s.replace('\"', ""))
+                .collect::<Vec<_>>();
+            let literal = proc_macro2::Literal::string(literal_vec.join("\n  ").as_str());
+
+            let enum_variants = variants.iter().map(|variant| {
+                let variant_ident = &variant.ident;
+                match &variant.fields {
+                    syn::Fields::Unnamed(_) => {
+                        quote! {
+                            #command_discriminants::#variant_ident => {
+                                #cli_command::#variant_ident(Default::default())
                             }
-                            interactive_clap::ResultFromCli::Back => return interactive_clap::ResultFromCli::Back,
-                            interactive_clap::ResultFromCli::Err(optional_cli_args, err) => {
-                                return interactive_clap::ResultFromCli::Err(
-                                    Some(#cli_command::#variant_ident(optional_cli_args.unwrap_or_default())),
-                                    err,
-                                );
-                            }
+                        }
+                    }
+                    syn::Fields::Unit => {
+                        quote! {
+                            #command_discriminants::#variant_ident => #cli_command::#variant_ident
+                        }
+                    }
+                    _ => abort_call_site!(
+                        "Only option `Fields::Unnamed` or `Fields::Unit` is needed"
+                    ),
+                }
+            });
+            let actions_push_back = if ast_attrs.contains(&"disable_back") {
+                quote!()
+            } else {
+                quote! {.chain([SelectVariantOrBack::Back])}
+            };
+
+            cli_variant = quote! {
+                use interactive_clap::SelectVariantOrBack;
+                use inquire::Select;
+                use strum::{EnumMessage, IntoEnumIterator};
+
+                let selected_variant = Select::new(
+                    #literal,
+                    #command_discriminants::iter()
+                        .map(SelectVariantOrBack::Variant)
+                        #actions_push_back
+                        .collect(),
+                )
+                .prompt();
+                match selected_variant {
+                    Ok(SelectVariantOrBack::Variant(variant)) => {
+                        let cli_args = match variant {
+                            #( #enum_variants, )*
                         };
-                        interactive_clap::ResultFromCli::Ok(#cli_command::#variant_ident(cli_args))
-                    }
+                        return interactive_clap::ResultFromCli::Ok(cli_args);
+                    },
+                    Ok(SelectVariantOrBack::Back) => return interactive_clap::ResultFromCli::Back,
+                    Err(
+                        inquire::error::InquireError::OperationCanceled
+                        | inquire::error::InquireError::OperationInterrupted,
+                    ) => return interactive_clap::ResultFromCli::Cancel(None),
+                    Err(err) => return interactive_clap::ResultFromCli::Err(None, err.into()),
                 }
-                syn::Fields::Unit => {
-                    cli_variant = quote! {
-                        interactive_clap::ResultFromCli::Ok(#cli_command::#variant_ident)
-                    };
-                }
-                _ => abort_call_site!("Only option `Fields::Unnamed` or `Fields::Unit` is needed"),
-            }
-        } else {
-            if ast_attrs.contains(&"strum_discriminants") {
-                let doc_attrs = ast
-                    .attrs
-                    .iter()
-                    .filter(|attr| attr.path.is_ident("doc"))
-                    .map(|attr| {
-                        let mut literal_string = String::new();
-                        for attr_token in attr.tokens.clone() {
-                            if let proc_macro2::TokenTree::Literal(literal) = attr_token {
-                                literal_string = literal.to_string();
-                            }
-                        }
-                        literal_string
-                    })
-                    .collect::<Vec<_>>();
-                let literal_vec = doc_attrs
-                    .iter()
-                    .map(|s| s.replace('\"', ""))
-                    .collect::<Vec<_>>();
-                let literal = proc_macro2::Literal::string(literal_vec.join("\n  ").as_str());
-
-                let enum_variants = variants.iter().map(|variant| {
-                    let variant_ident = &variant.ident;
-
-                    match &variant.fields {
-                        syn::Fields::Unnamed(fields_unnamed) => {
-                            let ty = &fields_unnamed.unnamed[0].ty;
-                            quote! {
-                                #command_discriminants::#variant_ident => {
-                                    match <#ty as interactive_clap::FromCli>::from_cli(None, context.clone()) {
-                                        interactive_clap::ResultFromCli::Ok(cli_args) => return interactive_clap::ResultFromCli::Ok(#cli_command::#variant_ident(cli_args)),
-                                        interactive_clap::ResultFromCli::Cancel(optional_cli_args) => {
-                                            return interactive_clap::ResultFromCli::Cancel(Some(#cli_command::#variant_ident(
-                                                optional_cli_args.unwrap_or_default(),
-                                            )));
-                                        }
-                                        interactive_clap::ResultFromCli::Back => continue,
-                                        interactive_clap::ResultFromCli::Err(optional_cli_args, err) => {
-                                            return interactive_clap::ResultFromCli::Err(
-                                                Some(#cli_command::#variant_ident(optional_cli_args.unwrap_or_default())),
-                                                err,
-                                            );
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        syn::Fields::Unit => {
-                            quote! {
-                                #command_discriminants::#variant_ident => return interactive_clap::ResultFromCli::Ok(#cli_command::#variant_ident)
-                            }
-                        },
-                        _ => abort_call_site!("Only option `Fields::Unnamed` or `Fields::Unit` is needed")
-                    }
-                });
-                let actions_push_back = if ast_attrs.contains(&"disable_back") {
-                    quote!()
-                } else {
-                    quote! {.chain([SelectVariantOrBack::Back])}
-                };
-
-                cli_variant = quote! {
-                    use interactive_clap::SelectVariantOrBack;
-                    use inquire::Select;
-                    use strum::{EnumMessage, IntoEnumIterator};
-                    loop {
-                        let selected_variant = Select::new(
-                            #literal,
-                            #command_discriminants::iter()
-                                .map(SelectVariantOrBack::Variant)
-                                #actions_push_back
-                                .collect(),
-                        )
-                        .prompt();
-                        match selected_variant {
-                            Ok(SelectVariantOrBack::Variant(variant)) => match variant {
-                                #( #enum_variants, )*
-                            },
-                            Ok(SelectVariantOrBack::Back) => return interactive_clap::ResultFromCli::Back,
-                            Err(
-                                inquire::error::InquireError::OperationCanceled
-                                | inquire::error::InquireError::OperationInterrupted,
-                            ) => return interactive_clap::ResultFromCli::Cancel(None),
-                            Err(err) => return interactive_clap::ResultFromCli::Err(None, err.into()),
-                        }
-                    }
-                };
-            }
+            };
         }
     };
-    let context = match &interactive_clap_attrs_context.output_context_dir {
-        Some(output_context_dir) => quote! {#output_context_dir},
-        None => interactive_clap_attrs_context
-            .clone()
-            .get_input_context_dir(),
-    };
+    let context = interactive_clap_attrs_context.get_input_context_dir();
 
     quote! {
         pub fn choose_variant(context: #context) -> interactive_clap::ResultFromCli<
