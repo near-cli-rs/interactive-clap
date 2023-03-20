@@ -20,22 +20,22 @@ pub fn from_cli_for_enum(
 
     let from_cli_variants = variants.iter().map(|variant| {
         let variant_ident = &variant.ident;
+        // let context_name = syn::Ident::new(&format!("{}Context", &name), Span::call_site());
         match &variant.fields {
             syn::Fields::Unnamed(fields) => {
                 let ty = &fields.unnamed[0].ty;
-                let context_name = syn::Ident::new(&format!("{}Context", &name), Span::call_site());
 
                 match &interactive_clap_attrs_context.output_context_dir {
                     Some(output_context_dir) => quote! {
                         Some(#cli_name::#variant_ident(inner_cli_args)) => {
                             type Alias = <#name as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope;
                             let new_context_scope = Alias::#variant_ident;
-                            let new_context = match #context_name::from_previous_context(context.clone(), &new_context_scope) {
+                            let output_context = match #output_context_dir::from_previous_context(context.clone(), &new_context_scope) {
                                 Ok(new_context) => new_context,
                                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(#cli_name::#variant_ident(inner_cli_args)), err),
                             };
-                            let output_context = #output_context_dir::from(new_context);
-                            let cli_inner_args = <#ty as interactive_clap::FromCli>::from_cli(Some(inner_cli_args), output_context);
+                            // let output_context = #output_context_dir::from(new_context);
+                            let cli_inner_args = <#ty as interactive_clap::FromCli>::from_cli(Some(inner_cli_args), output_context.into());
                             match cli_inner_args {
                                 interactive_clap::ResultFromCli::Ok(cli_args) => {
                                     interactive_clap::ResultFromCli::Ok(#cli_name::#variant_ident(cli_args))
@@ -88,8 +88,21 @@ pub fn from_cli_for_enum(
                 }
             },
             syn::Fields::Unit => {
-                quote! {
-                    Some(#cli_name::#variant_ident) => interactive_clap::ResultFromCli::Ok(#cli_name::#variant_ident),
+                match &interactive_clap_attrs_context.output_context_dir {
+                    Some(output_context_dir) => quote! {
+                        Some(#cli_name::#variant_ident) => {
+                            type Alias = <#name as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope;
+                            let new_context_scope = Alias::#variant_ident;
+                            let output_context = match #output_context_dir::from_previous_context(context.clone(), &new_context_scope) {
+                                Ok(new_context) => new_context,
+                                Err(err) => return interactive_clap::ResultFromCli::Err(Some(#cli_name::#variant_ident), err),
+                            };
+                            interactive_clap::ResultFromCli::Ok(#cli_name::#variant_ident)
+                        }
+                    },
+                    None => quote! {
+                        Some(#cli_name::#variant_ident) => interactive_clap::ResultFromCli::Ok(#cli_name::#variant_ident),
+                    }
                 }
             },
             _ => abort_call_site!("Only option `Fields::Unnamed` or `Fields::Unit` is needed")
