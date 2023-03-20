@@ -20,68 +20,51 @@ pub fn from_cli_for_enum(
 
     let from_cli_variants = variants.iter().map(|variant| {
         let variant_ident = &variant.ident;
-        // let context_name = syn::Ident::new(&format!("{}Context", &name), Span::call_site());
+
+        let output_context = match &interactive_clap_attrs_context.output_context_dir {
+            Some(output_context_dir) => {
+                quote! {
+                    type Alias = <#name as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope;
+                    let new_context_scope = Alias::#variant_ident;
+                    let output_context = match #output_context_dir::from_previous_context(context.clone(), &new_context_scope) {
+                        Ok(new_context) => new_context,
+                        Err(err) => return interactive_clap::ResultFromCli::Err(Some(#cli_name::#variant_ident(inner_cli_args)), err),
+                    };
+                }
+            }
+            None => {
+                quote! {
+                    let output_context = context.clone();
+                }
+            }
+        };
+
         match &variant.fields {
             syn::Fields::Unnamed(fields) => {
                 let ty = &fields.unnamed[0].ty;
-
-                match &interactive_clap_attrs_context.output_context_dir {
-                    Some(output_context_dir) => quote! {
-                        Some(#cli_name::#variant_ident(inner_cli_args)) => {
-                            type Alias = <#name as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope;
-                            let new_context_scope = Alias::#variant_ident;
-                            let output_context = match #output_context_dir::from_previous_context(context.clone(), &new_context_scope) {
-                                Ok(new_context) => new_context,
-                                Err(err) => return interactive_clap::ResultFromCli::Err(Some(#cli_name::#variant_ident(inner_cli_args)), err),
-                            };
-                            // let output_context = #output_context_dir::from(new_context);
-                            let cli_inner_args = <#ty as interactive_clap::FromCli>::from_cli(Some(inner_cli_args), output_context.into());
-                            match cli_inner_args {
-                                interactive_clap::ResultFromCli::Ok(cli_args) => {
-                                    interactive_clap::ResultFromCli::Ok(#cli_name::#variant_ident(cli_args))
-                                }
-                                interactive_clap::ResultFromCli::Back => {
-                                    optional_clap_variant = None;
-                                    continue;
-                                },
-                                interactive_clap::ResultFromCli::Cancel(Some(cli_args)) => {
-                                    interactive_clap::ResultFromCli::Cancel(Some(#cli_name::#variant_ident(cli_args)))
-                                }
-                                interactive_clap::ResultFromCli::Cancel(None) => {
-                                    interactive_clap::ResultFromCli::Cancel(None)
-                                }
-                                interactive_clap::ResultFromCli::Err(Some(cli_args), err) => {
-                                    interactive_clap::ResultFromCli::Err(Some(#cli_name::#variant_ident(cli_args)), err)
-                                }
-                                interactive_clap::ResultFromCli::Err(None, err) => {
-                                    interactive_clap::ResultFromCli::Err(None, err)
-                                }
+                quote! {
+                    Some(#cli_name::#variant_ident(inner_cli_args)) => {
+                        #output_context
+                        let cli_inner_args = <#ty as interactive_clap::FromCli>::from_cli(Some(inner_cli_args), output_context.into());
+                        match cli_inner_args {
+                            interactive_clap::ResultFromCli::Ok(cli_args) => {
+                                interactive_clap::ResultFromCli::Ok(#cli_name::#variant_ident(cli_args))
                             }
-                        }
-                    },
-                    None => quote! {
-                        Some(#cli_name::#variant_ident(inner_cli_args)) => {
-                            let cli_inner_args = <#ty as interactive_clap::FromCli>::from_cli(Some(inner_cli_args), context.clone().into());
-                            match cli_inner_args {
-                                interactive_clap::ResultFromCli::Ok(cli_args) => {
-                                    interactive_clap::ResultFromCli::Ok(#cli_name::#variant_ident(cli_args))
-                                }
-                                interactive_clap::ResultFromCli::Back => {
-                                    optional_clap_variant = None;
-                                    continue;
-                                },
-                                interactive_clap::ResultFromCli::Cancel(Some(cli_args)) => {
-                                    interactive_clap::ResultFromCli::Cancel(Some(#cli_name::#variant_ident(cli_args)))
-                                }
-                                interactive_clap::ResultFromCli::Cancel(None) => {
-                                    interactive_clap::ResultFromCli::Cancel(None)
-                                }
-                                interactive_clap::ResultFromCli::Err(Some(cli_args), err) => {
-                                    interactive_clap::ResultFromCli::Err(Some(#cli_name::#variant_ident(cli_args)), err)
-                                }
-                                interactive_clap::ResultFromCli::Err(None, err) => {
-                                    interactive_clap::ResultFromCli::Err(None, err)
-                                }
+                            interactive_clap::ResultFromCli::Back => {
+                                optional_clap_variant = None;
+                                continue;
+                            },
+                            interactive_clap::ResultFromCli::Cancel(Some(cli_args)) => {
+                                interactive_clap::ResultFromCli::Cancel(Some(#cli_name::#variant_ident(cli_args)))
+                            }
+                            interactive_clap::ResultFromCli::Cancel(None) => {
+                                interactive_clap::ResultFromCli::Cancel(None)
+                            }
+                            interactive_clap::ResultFromCli::Err(Some(cli_args), err) => {
+                                interactive_clap::ResultFromCli::Err(Some(#cli_name::#variant_ident(cli_args)), err)
+                            }
+                            interactive_clap::ResultFromCli::Err(None, err) => {
+                                interactive_clap::ResultFromCli::Err(None, err)
                             }
                         }
                     }
@@ -101,7 +84,9 @@ pub fn from_cli_for_enum(
                         }
                     },
                     None => quote! {
-                        Some(#cli_name::#variant_ident) => interactive_clap::ResultFromCli::Ok(#cli_name::#variant_ident),
+                        Some(#cli_name::#variant_ident) => {
+                            interactive_clap::ResultFromCli::Ok(#cli_name::#variant_ident)
+                        },
                     }
                 }
             },
