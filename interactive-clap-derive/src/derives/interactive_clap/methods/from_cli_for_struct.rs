@@ -33,12 +33,7 @@ pub fn from_cli_for_struct(
 
     let field_value_named_arg = if let Some(token_stream) = fields
         .iter()
-        .map(|field| {
-            field_value_named_arg(
-                name,
-                field,
-            )
-        })
+        .map(|field| field_value_named_arg(name, field))
         .find(|token_stream| !token_stream.is_empty())
     {
         token_stream
@@ -48,11 +43,7 @@ pub fn from_cli_for_struct(
 
     let field_value_subcommand = if let Some(token_stream) = fields
         .iter()
-        .map(|field| {
-            field_value_subcommand(
-                field,
-            )
-        })
+        .map(field_value_subcommand)
         .find(|token_stream| !token_stream.is_empty())
     {
         token_stream
@@ -125,10 +116,7 @@ fn fields_value(field: &syn::Field) -> proc_macro2::TokenStream {
     }
 }
 
-fn field_value_named_arg(
-    name: &syn::Ident,
-    field: &syn::Field,
-) -> proc_macro2::TokenStream {
+fn field_value_named_arg(name: &syn::Ident, field: &syn::Field) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
     let ty = &field.ty;
     if field.attrs.is_empty() {
@@ -187,9 +175,7 @@ fn field_value_named_arg(
     }
 }
 
-fn field_value_subcommand(
-    field: &syn::Field,
-) -> proc_macro2::TokenStream {
+fn field_value_subcommand(field: &syn::Field) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
     let ty = &field.ty;
     if field.attrs.is_empty() {
