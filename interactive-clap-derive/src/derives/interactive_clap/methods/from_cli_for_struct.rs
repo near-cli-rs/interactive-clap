@@ -33,13 +33,7 @@ pub fn from_cli_for_struct(
 
     let field_value_named_arg = if let Some(token_stream) = fields
         .iter()
-        .map(|field| {
-            field_value_named_arg(
-                name,
-                field,
-                &interactive_clap_attrs_context.output_context_dir,
-            )
-        })
+        .map(|field| field_value_named_arg(name, field))
         .find(|token_stream| !token_stream.is_empty())
     {
         token_stream
@@ -49,13 +43,7 @@ pub fn from_cli_for_struct(
 
     let field_value_subcommand = if let Some(token_stream) = fields
         .iter()
-        .map(|field| {
-            field_value_subcommand(
-                name,
-                field,
-                &interactive_clap_attrs_context.output_context_dir,
-            )
-        })
+        .map(field_value_subcommand)
         .find(|token_stream| !token_stream.is_empty())
     {
         token_stream
@@ -63,11 +51,9 @@ pub fn from_cli_for_struct(
         quote!()
     };
 
-    let struct_fields = fields
-        .iter()
-        .map(|field| struct_field(field, &fields_without_subcommand));
-
-    let input_context_dir = interactive_clap_attrs_context.get_input_context_dir();
+    let input_context_dir = interactive_clap_attrs_context
+        .clone()
+        .get_input_context_dir();
 
     let interactive_clap_context_scope_for_struct = syn::Ident::new(
         &format!("InteractiveClapContextScopeFor{}", &name),
@@ -77,6 +63,19 @@ pub fn from_cli_for_struct(
         let new_context_scope = #interactive_clap_context_scope_for_struct { #(#fields_without_subcommand,)* };
     };
 
+    let output_context = match &interactive_clap_attrs_context.output_context_dir {
+        Some(output_context_dir) => {
+            quote! {
+                let output_context = match #output_context_dir::from_previous_context(context.clone(), &new_context_scope) {
+                    Ok(new_context) => new_context,
+                    Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+                };
+                let context = output_context;
+            }
+        }
+        None => quote!(),
+    };
+
     quote! {
         impl interactive_clap::FromCli for #name {
             type FromCliContext = #input_context_dir;
@@ -84,12 +83,14 @@ pub fn from_cli_for_struct(
             fn from_cli(
                 optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
                 context: Self::FromCliContext,
-            ) -> Result<Option<Self>, Self::FromCliError> where Self: Sized + interactive_clap::ToCli {
+            ) -> interactive_clap::ResultFromCli<<Self as interactive_clap::ToCli>::CliVariant, Self::FromCliError> where Self: Sized + interactive_clap::ToCli {
+                let mut clap_variant = optional_clap_variant.unwrap_or_default();
                 #(#fields_value)*
                 #new_context_scope
+                #output_context
                 #field_value_named_arg
                 #field_value_subcommand;
-                Ok(Some(Self{ #(#struct_fields,)* }))
+                interactive_clap::ResultFromCli::Ok(clap_variant)
             }
         }
     }
@@ -97,26 +98,25 @@ pub fn from_cli_for_struct(
 
 fn fields_value(field: &syn::Field) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
-    let fn_from_cli_arg = syn::Ident::new(&format!("from_cli_{}", &ident_field), Span::call_site());
+    let fn_input_arg = syn::Ident::new(&format!("input_{}", &ident_field), Span::call_site());
     if super::fields_without_subcommand::is_field_without_subcommand(field) {
         quote! {
-            let #ident_field = Self::#fn_from_cli_arg(
-                optional_clap_variant
-                    .clone()
-                    .and_then(|clap_variant| clap_variant.#ident_field),
-                    &context,
-            )?;
+            if clap_variant.#ident_field.is_none() {
+                clap_variant
+                    .#ident_field = match Self::#fn_input_arg(&context) {
+                    Ok(Some(#ident_field)) => Some(#ident_field),
+                    Ok(None) => return interactive_clap::ResultFromCli::Cancel(Some(clap_variant)),
+                    Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+                };
+            };
+            let #ident_field = clap_variant.#ident_field.clone().expect("Unexpected error");
         }
     } else {
         quote!()
     }
 }
 
-fn field_value_named_arg(
-    name: &syn::Ident,
-    field: &syn::Field,
-    output_context_dir: &Option<proc_macro2::TokenStream>,
-) -> proc_macro2::TokenStream {
+fn field_value_named_arg(name: &syn::Ident, field: &syn::Field) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
     let ty = &field.ty;
     if field.attrs.is_empty() {
@@ -144,38 +144,26 @@ fn field_value_named_arg(
             let enum_for_clap_named_arg = syn::Ident::new(&format!("ClapNamedArg{}For{}", &type_string, &name), Span::call_site());
             let variant_name_string = crate::helpers::snake_case_to_camel_case::snake_case_to_camel_case(ident_field.to_string());
             let variant_name = &syn::Ident::new(&variant_name_string, Span::call_site());
-            match output_context_dir {
-                Some(output_context_dir) => {
-                    let context_for_struct = syn::Ident::new(&format!("{}Context", &name), Span::call_site());
-                    quote! {
-                        let new_context = #context_for_struct::from_previous_context(context, &new_context_scope)?;
-                        let output_context = #output_context_dir::from(new_context);
-                        let #ident_field = <#ty as interactive_clap::FromCli>::from_cli(
-                            optional_clap_variant.and_then(|clap_variant| match clap_variant.#ident_field {
-                                Some(#enum_for_clap_named_arg::#variant_name(cli_arg)) => Some(cli_arg),
-                                None => None,
-                            }),
-                            output_context,
-                        )?;
-                        let #ident_field = if let Some(value) = #ident_field {
-                            value
-                        } else {
-                            return Ok(None);
-                        }
+            quote! {
+                let optional_field = match clap_variant.#ident_field.take() {
+                    Some(#enum_for_clap_named_arg::#variant_name(cli_arg)) => Some(cli_arg),
+                    None => None,
+                };
+                match <#ty as interactive_clap::FromCli>::from_cli(
+                    optional_field,
+                    context.into(),
+                ) {
+                    interactive_clap::ResultFromCli::Ok(cli_field) => {
+                        clap_variant.#ident_field = Some(#enum_for_clap_named_arg::#variant_name(cli_field));
                     }
-                },
-                None => quote! {
-                    let #ident_field = <#ty as interactive_clap::FromCli>::from_cli(
-                        optional_clap_variant.and_then(|clap_variant| match clap_variant.#ident_field {
-                            Some(#enum_for_clap_named_arg::#variant_name(cli_sender)) => Some(cli_sender),
-                            None => None,
-                        }),
-                        context.into(),
-                    )?;
-                    let #ident_field = if let Some(value) = #ident_field {
-                        value
-                    } else {
-                        return Ok(None);
+                    interactive_clap::ResultFromCli::Cancel(optional_cli_field) => {
+                        clap_variant.#ident_field = optional_cli_field.map(#enum_for_clap_named_arg::#variant_name);
+                        return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
+                    }
+                    interactive_clap::ResultFromCli::Back => return interactive_clap::ResultFromCli::Back,
+                    interactive_clap::ResultFromCli::Err(optional_cli_field, err) => {
+                        clap_variant.#ident_field = optional_cli_field.map(#enum_for_clap_named_arg::#variant_name);
+                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
                     }
                 }
             }
@@ -187,11 +175,7 @@ fn field_value_named_arg(
     }
 }
 
-fn field_value_subcommand(
-    name: &syn::Ident,
-    field: &syn::Field,
-    output_context_dir: &Option<proc_macro2::TokenStream>,
-) -> proc_macro2::TokenStream {
+fn field_value_subcommand(field: &syn::Field) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
     let ty = &field.ty;
     if field.attrs.is_empty() {
@@ -207,32 +191,23 @@ fn field_value_subcommand(
             }
         })
         .map(|_| {
-            match output_context_dir {
-                Some(output_context_dir) => {
-                    let context_for_struct = syn::Ident::new(&format!("{}Context", &name), Span::call_site());
-                    quote! {
-                        let new_context = #context_for_struct::from_previous_context(context, &new_context_scope)?;
-                        let output_context = #output_context_dir::from(new_context);
-                        let #ident_field = match optional_clap_variant.and_then(|clap_variant| clap_variant.#ident_field) {
-                            Some(cli_arg) => <#ty as interactive_clap::FromCli>::from_cli(Some(cli_arg), output_context)?,
-                            None => #ty::choose_variant(output_context)?,
-                        };
-                        let #ident_field = if let Some(value) = #ident_field {
-                            value
-                        } else {
-                            return Ok(None);
-                        }
+            quote! {
+                match <#ty as interactive_clap::FromCli>::from_cli(clap_variant.#ident_field.take(), context.into()) {
+                    interactive_clap::ResultFromCli::Ok(cli_field) => {
+                        clap_variant.#ident_field = Some(cli_field);
                     }
-                },
-                None => quote! {
-                    let #ident_field = match optional_clap_variant.and_then(|clap_variant| clap_variant.#ident_field) {
-                        Some(cli_arg) => <#ty as interactive_clap::FromCli>::from_cli(Some(cli_arg), context)?,
-                        None => #ty::choose_variant(context.into())?,
-                    };
-                    let #ident_field = if let Some(value) = #ident_field {
-                        value
-                    } else {
-                        return Ok(None);
+                    interactive_clap::ResultFromCli::Cancel(option_cli_field) => {
+                        clap_variant.#ident_field = option_cli_field;
+                        return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
+                    }
+                    interactive_clap::ResultFromCli::Cancel(option_cli_field) => {
+                        clap_variant.#ident_field = option_cli_field;
+                        return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
+                    }
+                    interactive_clap::ResultFromCli::Back => return interactive_clap::ResultFromCli::Back,
+                    interactive_clap::ResultFromCli::Err(option_cli_field, err) => {
+                        clap_variant.#ident_field = option_cli_field;
+                        return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
                     }
                 }
             }
@@ -240,26 +215,6 @@ fn field_value_subcommand(
         .next() {
             Some(token_stream) => token_stream,
             None => quote! ()
-        }
-    }
-}
-
-fn struct_field(
-    field: &syn::Field,
-    fields_without_subcommand: &[proc_macro2::TokenStream],
-) -> proc_macro2::TokenStream {
-    let ident_field = &field.clone().ident.expect("this field does not exist");
-    if fields_without_subcommand
-        .iter()
-        .map(|token_stream| token_stream.to_string())
-        .any(|x| *ident_field == x)
-    {
-        quote! {
-            #ident_field: new_context_scope.#ident_field
-        }
-    } else {
-        quote! {
-            #ident_field
         }
     }
 }

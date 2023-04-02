@@ -34,8 +34,12 @@ pub fn vec_fn_input_arg(
                 return quote! {
                     fn #fn_input_arg(
                         _context: &#input_context_dir,
-                    ) -> color_eyre::eyre::Result<#ty> {
-                        Ok(inquire::CustomType::new(#promt).prompt()?)
+                    ) -> color_eyre::eyre::Result<Option<#ty>> {
+                        match inquire::CustomType::new(#promt).prompt() {
+                            Ok(value) => Ok(Some(value)),
+                            Err(inquire::error::InquireError::OperationCanceled | inquire::error::InquireError::OperationInterrupted) => Ok(None),
+                            Err(err) => Err(err.into()),
+                        }
                     }
                 };
             }
@@ -63,8 +67,12 @@ pub fn vec_fn_input_arg(
             quote! {
                 fn #fn_input_arg(
                     _context: &#input_context_dir,
-                ) -> color_eyre::eyre::Result<#ty> {
-                    Ok(inquire::CustomType::new(#literal.to_string().as_str()).prompt()?)
+                ) -> color_eyre::eyre::Result<Option<#ty>> {
+                    match inquire::CustomType::new(#literal).prompt() {
+                        Ok(value) => Ok(Some(value)),
+                        Err(inquire::error::InquireError::OperationCanceled | inquire::error::InquireError::OperationInterrupted) => Ok(None),
+                        Err(err) => Err(err.into()),
+                    }
                 }
             }
         })

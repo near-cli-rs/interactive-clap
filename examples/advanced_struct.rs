@@ -7,15 +7,14 @@
 //                                    => args: Ok(Args { age: 30, first_name: "QWE", second_name: "QWERTY" })
 // To learn more about the parameters, use "help" flag: ./advanced_struct --help
 
-use inquire::{CustomType, Text};
+use interactive_clap::{ResultFromCli, ToCliArgs};
 
-#[derive(Debug, interactive_clap_derive::InteractiveClap)]
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(skip_default_from_cli)]
 struct Args {
-    #[interactive_clap(long = "age-full-years")] // hgfashdgfajdfsadajsdfh
-    #[interactive_clap(skip_default_from_cli_arg)] // указать для чего этот атрибут нужен
+    #[interactive_clap(long = "age-full-years")]
     #[interactive_clap(skip_default_input_arg)]
-    age: u64,
+    age: Option<u64>,
     #[interactive_clap(long)]
     ///What is your first name?
     first_name: String,
@@ -24,62 +23,97 @@ struct Args {
     second_name: String,
 }
 
+impl interactive_clap::FromCli for Args {
+    type FromCliContext = ();
+    type FromCliError = color_eyre::eyre::Error;
+    fn from_cli(
+        optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+        context: Self::FromCliContext,
+    ) -> ResultFromCli<<Self as interactive_clap::ToCli>::CliVariant, Self::FromCliError>
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
+        let mut clap_variant = optional_clap_variant.unwrap_or_default();
+        if clap_variant.age.is_none() {
+            clap_variant.age = match Self::input_age(&context) {
+                Ok(optional_age) => optional_age,
+                Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let age = clap_variant.age;
+        if clap_variant.first_name.is_none() {
+            clap_variant.first_name = match Self::input_first_name(&context) {
+                Ok(Some(first_name)) => Some(first_name),
+                Ok(None) => return ResultFromCli::Cancel(Some(clap_variant)),
+                Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let first_name = clap_variant.first_name.clone().expect("Unexpected error");
+        if clap_variant.second_name.is_none() {
+            clap_variant.second_name = match Self::input_second_name(&context) {
+                Ok(Some(second_name)) => Some(second_name),
+                Ok(None) => return ResultFromCli::Cancel(Some(clap_variant)),
+                Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
+            };
+        }
+        let second_name = clap_variant.second_name.clone().expect("Unexpected error");
+        ResultFromCli::Ok(clap_variant)
+    }
+}
+
 impl Args {
-    pub fn from_cli(
-        optional_clap_variant: Option<CliArgs>,
-        context: (),
-    ) -> color_eyre::eyre::Result<Option<Self>> {
-        let age = Self::from_cli_age(
-            optional_clap_variant
-                .clone()
-                .and_then(|clap_variant| clap_variant.age),
-            &context,
-        )?;
-        let first_name = Self::from_cli_first_name(
-            optional_clap_variant
-                .clone()
-                .and_then(|clap_variant| clap_variant.first_name),
-            &context,
-        )?;
-        let second_name = Self::from_cli_second_name(
-            optional_clap_variant
-                .clone()
-                .and_then(|clap_variant| clap_variant.second_name),
-            &context,
-        )?;
-        let new_context_scope = InteractiveClapContextScopeForArgs {
-            age,
-            first_name,
-            second_name,
-        };
-        Ok(Some(Self {
-            age: new_context_scope.age,
-            first_name: new_context_scope.first_name,
-            second_name: new_context_scope.second_name,
-        }))
+    fn input_age(_context: &()) -> color_eyre::eyre::Result<Option<u64>> {
+        match inquire::CustomType::new("Input age full years".to_string().as_str()).prompt() {
+            Ok(value) => Ok(Some(value)),
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => Ok(None),
+            Err(err) => Err(err.into()),
+        }
     }
 
-    fn input_age(_context: &()) -> color_eyre::eyre::Result<u64> {
-        Ok(CustomType::new("How old are you?").prompt()?)
-    }
-
-    fn input_second_name(_context: &()) -> color_eyre::eyre::Result<String> {
-        Ok(Text::new("What is your last name?").prompt()?)
-    }
-
-    fn from_cli_age(
-        optional_cli_age: Option<u64>,
-        context: &(), // default: input_context = ()
-    ) -> color_eyre::eyre::Result<u64> {
-        match optional_cli_age {
-            Some(age) => Ok(age),
-            None => Self::input_age(&context),
+    fn input_second_name(_context: &()) -> color_eyre::eyre::Result<Option<String>> {
+        match inquire::Text::new("Input second name".to_string().as_str()).prompt() {
+            Ok(value) => Ok(Some(value)),
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => Ok(None),
+            Err(err) => Err(err.into()),
         }
     }
 }
 
-fn main() {
-    let cli_args = Args::parse();
-    let args = Args::from_cli(Some(cli_args), ());
-    println!("args: {:?}", args)
+fn main() -> color_eyre::Result<()> {
+    let mut cli_args = Args::parse();
+    let context = (); // default: input_context = ()
+    loop {
+        let args = <Args as interactive_clap::FromCli>::from_cli(Some(cli_args), context);
+        match args {
+            ResultFromCli::Ok(cli_args) | ResultFromCli::Cancel(Some(cli_args)) => {
+                println!(
+                    "Your console command:  {}",
+                    shell_words::join(&cli_args.to_cli_args())
+                );
+                return Ok(());
+            }
+            ResultFromCli::Cancel(None) => {
+                println!("Goodbye!");
+                return Ok(());
+            }
+            ResultFromCli::Back => {
+                cli_args = Default::default();
+            }
+            ResultFromCli::Err(cli_args, err) => {
+                if let Some(cli_args) = cli_args {
+                    println!(
+                        "Your console command:  {}",
+                        shell_words::join(&cli_args.to_cli_args())
+                    );
+                }
+                return Err(err);
+            }
+        }
+    }
 }

@@ -112,8 +112,6 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
             let fn_from_cli_for_struct =
                 self::methods::from_cli_for_struct::from_cli_for_struct(ast, &fields);
 
-            let fn_get_arg = self::methods::get_arg_from_cli_for_struct::from_cli_arg(ast, &fields);
-
             let vec_fn_input_arg = self::methods::input_arg::vec_fn_input_arg(ast, &fields);
 
             let context_scope_fields = fields
@@ -175,7 +173,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 };
 
             let gen = quote! {
-                #[derive(Debug, Default, Clone, clap::Parser, interactive_clap_derive::ToCliArgs)]
+                #[derive(Debug, Default, Clone, clap::Parser, interactive_clap::ToCliArgs)]
                 #[clap(author, version, about, long_about = None)]
                 pub struct #cli_name {
                     #( #cli_fields, )*
@@ -190,7 +188,6 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 #fn_from_cli_for_struct
 
                 impl #name {
-                    #(#fn_get_arg)*
                     #(#vec_fn_input_arg)*
 
                     fn try_parse() -> Result<#cli_name, clap::Error> {
@@ -305,7 +302,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 self::methods::from_cli_for_enum::from_cli_for_enum(ast, variants);
 
             let gen = quote! {
-                #[derive(Debug, Clone, clap::Parser, interactive_clap_derive::ToCliArgs)]
+                #[derive(Debug, Clone, clap::Parser, interactive_clap::ToCliArgs)]
                 pub enum #cli_name {
                     #( #enum_variants, )*
                 }

@@ -7,18 +7,49 @@
 //                    ./struct_with_subcommand offline => operation_mode: Ok(OperationMode { mode: Offline })
 // To learn more about the parameters, use "help" flag: ./struct_with_subcommand --help
 
+use interactive_clap::{ResultFromCli, ToCliArgs};
+
 mod simple_enum;
 
-#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 pub struct OperationMode {
     #[interactive_clap(subcommand)]
     pub mode: simple_enum::Mode,
 }
 
-fn main() {
-    let cli_operation_mode = OperationMode::parse();
+fn main() -> color_eyre::Result<()> {
+    let mut cli_operation_mode = OperationMode::parse();
     let context = (); // default: input_context = ()
-    let operation_mode =
-        <OperationMode as interactive_clap::FromCli>::from_cli(Some(cli_operation_mode), context);
-    println!("operation_mode: {:?}", &operation_mode);
+    loop {
+        let operation_mode = <OperationMode as interactive_clap::FromCli>::from_cli(
+            Some(cli_operation_mode),
+            context,
+        );
+        match operation_mode {
+            ResultFromCli::Ok(cli_operation_mode)
+            | ResultFromCli::Cancel(Some(cli_operation_mode)) => {
+                println!(
+                    "Your console command:  {}",
+                    shell_words::join(&cli_operation_mode.to_cli_args())
+                );
+                return Ok(());
+            }
+            ResultFromCli::Cancel(None) => {
+                println!("Goodbye!");
+                return Ok(());
+            }
+            ResultFromCli::Back => {
+                cli_operation_mode = Default::default();
+            }
+            ResultFromCli::Err(cli_operation_mode, err) => {
+                if let Some(cli_operation_mode) = cli_operation_mode {
+                    println!(
+                        "Your console command:  {}",
+                        shell_words::join(&cli_operation_mode.to_cli_args())
+                    );
+                }
+                return Err(err);
+            }
+        }
+    }
 }

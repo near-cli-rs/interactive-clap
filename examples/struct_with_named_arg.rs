@@ -7,22 +7,50 @@
 //                    ./struct_with_named_arg account QWERTY => account: Ok(Account { account: Sender { sender_account_id: "QWERTY" } })
 // To learn more about the parameters, use "help" flag: ./struct_with_named_arg --help
 
-#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+use interactive_clap::{ResultFromCli, ToCliArgs};
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 struct Account {
     #[interactive_clap(named_arg)]
     ///Specify a sender
     account: Sender,
 }
 
-#[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 pub struct Sender {
-    ///What is the account ID?
+    ///What is the sender account ID?
     pub sender_account_id: String,
 }
 
-fn main() {
-    let cli_account = Account::parse();
+fn main() -> color_eyre::Result<()> {
+    let mut cli_account = Account::parse();
     let context = (); // default: input_context = ()
-    let account = <Account as interactive_clap::FromCli>::from_cli(Some(cli_account), context);
-    println!("account: {:?}", account)
+    loop {
+        let account = <Account as interactive_clap::FromCli>::from_cli(Some(cli_account), context);
+        match account {
+            ResultFromCli::Ok(cli_account) | ResultFromCli::Cancel(Some(cli_account)) => {
+                println!(
+                    "Your console command:  {}",
+                    shell_words::join(&cli_account.to_cli_args())
+                );
+                return Ok(());
+            }
+            ResultFromCli::Cancel(None) => {
+                println!("Goodbye!");
+                return Ok(());
+            }
+            ResultFromCli::Back => {
+                cli_account = Default::default();
+            }
+            ResultFromCli::Err(cli_account, err) => {
+                if let Some(cli_account) = cli_account {
+                    println!(
+                        "Your console command:  {}",
+                        shell_words::join(&cli_account.to_cli_args())
+                    );
+                }
+                return Err(err);
+            }
+        }
+    }
 }

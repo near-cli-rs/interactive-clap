@@ -10,7 +10,7 @@ pub fn from_cli_for_enum(
     variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
 ) -> proc_macro2::TokenStream {
     let name = &ast.ident;
-    let cli_name = syn::Ident::new(&format!("Cli{}", name), Span::call_site());
+    let cli_name = syn::Ident::new(&format!("Cli{name}"), Span::call_site());
 
     let interactive_clap_attrs_context =
         super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(ast);
@@ -20,42 +20,74 @@ pub fn from_cli_for_enum(
 
     let from_cli_variants = variants.iter().map(|variant| {
         let variant_ident = &variant.ident;
+
+        let output_context = match &interactive_clap_attrs_context.output_context_dir {
+            Some(output_context_dir) => {
+                quote! {
+                    type Alias = <#name as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope;
+                    let new_context_scope = Alias::#variant_ident;
+                    let output_context = match #output_context_dir::from_previous_context(context.clone(), &new_context_scope) {
+                        Ok(new_context) => new_context,
+                        Err(err) => return interactive_clap::ResultFromCli::Err(Some(#cli_name::#variant_ident(inner_cli_args)), err),
+                    };
+                }
+            }
+            None => {
+                quote! {
+                    let output_context = context.clone();
+                }
+            }
+        };
+
         match &variant.fields {
             syn::Fields::Unnamed(fields) => {
                 let ty = &fields.unnamed[0].ty;
-                let context_name = syn::Ident::new(&format!("{}Context", &name), Span::call_site());
-
-
-                match &interactive_clap_attrs_context.output_context_dir {
-                    Some(output_context_dir) => quote! {
-                        Some(#cli_name::#variant_ident(inner_cli_args)) => {
-                            type Alias = <#name as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope;
-                            let new_context_scope = Alias::#variant_ident;
-                            let new_context = #context_name::from_previous_context(context.clone(), &new_context_scope)?;
-                            let output_context = #output_context_dir::from(new_context);
-                            let optional_inner_args = <#ty as interactive_clap::FromCli>::from_cli(Some(inner_cli_args), output_context)?;
-                            if let Some(inner_args) = optional_inner_args {
-                                Ok(Some(Self::#variant_ident(inner_args,)))
-                            } else {
-                                Self::choose_variant(context.clone())
+                quote! {
+                    Some(#cli_name::#variant_ident(inner_cli_args)) => {
+                        #output_context
+                        let cli_inner_args = <#ty as interactive_clap::FromCli>::from_cli(Some(inner_cli_args), output_context.into());
+                        match cli_inner_args {
+                            interactive_clap::ResultFromCli::Ok(cli_args) => {
+                                interactive_clap::ResultFromCli::Ok(#cli_name::#variant_ident(cli_args))
                             }
-                        }
-                    },
-                    None => quote! {
-                        Some(#cli_name::#variant_ident(inner_cli_args)) => {
-                            let optional_inner_args = <#ty as interactive_clap::FromCli>::from_cli(Some(inner_cli_args), context.clone().into())?;
-                            if let Some(inner_args) = optional_inner_args {
-                                Ok(Some(Self::#variant_ident(inner_args,)))
-                            } else {
-                                Self::choose_variant(context.clone())
+                            interactive_clap::ResultFromCli::Back => {
+                                optional_clap_variant = None;
+                                continue;
+                            },
+                            interactive_clap::ResultFromCli::Cancel(Some(cli_args)) => {
+                                interactive_clap::ResultFromCli::Cancel(Some(#cli_name::#variant_ident(cli_args)))
+                            }
+                            interactive_clap::ResultFromCli::Cancel(None) => {
+                                interactive_clap::ResultFromCli::Cancel(None)
+                            }
+                            interactive_clap::ResultFromCli::Err(Some(cli_args), err) => {
+                                interactive_clap::ResultFromCli::Err(Some(#cli_name::#variant_ident(cli_args)), err)
+                            }
+                            interactive_clap::ResultFromCli::Err(None, err) => {
+                                interactive_clap::ResultFromCli::Err(None, err)
                             }
                         }
                     }
                 }
             },
             syn::Fields::Unit => {
-                quote! {
-                    Some(#cli_name::#variant_ident) => Ok(Some(Self::#variant_ident)),
+                match &interactive_clap_attrs_context.output_context_dir {
+                    Some(output_context_dir) => quote! {
+                        Some(#cli_name::#variant_ident) => {
+                            type Alias = <#name as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope;
+                            let new_context_scope = Alias::#variant_ident;
+                            let output_context = match #output_context_dir::from_previous_context(context.clone(), &new_context_scope) {
+                                Ok(new_context) => new_context,
+                                Err(err) => return interactive_clap::ResultFromCli::Err(Some(#cli_name::#variant_ident), err),
+                            };
+                            interactive_clap::ResultFromCli::Ok(#cli_name::#variant_ident)
+                        }
+                    },
+                    None => quote! {
+                        Some(#cli_name::#variant_ident) => {
+                            interactive_clap::ResultFromCli::Ok(#cli_name::#variant_ident)
+                        },
+                    }
                 }
             },
             _ => abort_call_site!("Only option `Fields::Unnamed` or `Fields::Unit` is needed")
@@ -71,12 +103,20 @@ pub fn from_cli_for_enum(
             type FromCliContext = #input_context_dir;
             type FromCliError = color_eyre::eyre::Error;
             fn from_cli(
-                optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+                mut optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
                 context: Self::FromCliContext,
-            ) -> Result<Option<Self>, Self::FromCliError> where Self: Sized + interactive_clap::ToCli {
-                match optional_clap_variant {
-                    #(#from_cli_variants)*
-                    None => Self::choose_variant(context.clone()),
+            ) -> interactive_clap::ResultFromCli<<Self as interactive_clap::ToCli>::CliVariant, Self::FromCliError> where Self: Sized + interactive_clap::ToCli {
+                loop {
+                    return match optional_clap_variant {
+                        #(#from_cli_variants)*
+                        None => match Self::choose_variant(context.clone()) {
+                            interactive_clap::ResultFromCli::Ok(cli_args) => {
+                                optional_clap_variant = Some(cli_args);
+                                continue;
+                            },
+                            result => return result,
+                        },
+                    }
                 }
             }
         }
