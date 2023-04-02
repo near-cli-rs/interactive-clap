@@ -53,7 +53,7 @@ pub fn from_cli_arg(ast: &syn::DeriveInput, fields: &syn::Fields) -> Vec<proc_ma
                 let fn_from_cli_arg =
                     syn::Ident::new(&format!("from_cli_{}", &ident_field), Span::call_site());
                 let optional_cli_field_name =
-                    syn::Ident::new(&format!("optional_cli_{}", ident_field), Span::call_site());
+                    syn::Ident::new(&format!("optional_cli_{ident_field}"), Span::call_site());
                 let input_context_dir = interactive_clap_attrs_context
                     .clone()
                     .get_input_context_dir();

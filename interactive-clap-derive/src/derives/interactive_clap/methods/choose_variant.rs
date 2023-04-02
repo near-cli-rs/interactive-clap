@@ -12,9 +12,8 @@ pub fn fn_choose_variant(
     let name = &ast.ident;
     let interactive_clap_attrs_context =
         super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(ast);
-    let command_discriminants =
-        syn::Ident::new(&format!("{}Discriminants", name), Span::call_site());
-    let cli_command = syn::Ident::new(&format!("Cli{}", name), Span::call_site());
+    let command_discriminants = syn::Ident::new(&format!("{name}Discriminants"), Span::call_site());
+    let cli_command = syn::Ident::new(&format!("Cli{name}"), Span::call_site());
 
     let mut cli_variant = quote!();
     let mut ast_attrs: Vec<&str> = std::vec::Vec::new();

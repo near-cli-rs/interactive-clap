@@ -15,7 +15,6 @@ mod common;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = common::ConnectionConfig)]
-// #[interactive_clap(skip_default_from_cli)]
 struct OnlineArgs {
     /// What is the name of the network
     #[interactive_clap(skip_default_input_arg)]
@@ -38,50 +37,6 @@ impl OnlineArgs {
         }
     }
 }
-
-// impl interactive_clap::FromCli for OnlineArgs {
-//     type FromCliContext = common::ConnectionConfig;
-//     type FromCliError = color_eyre::eyre::Error;
-
-//     fn from_cli(
-//         optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
-//         context: Self::FromCliContext,
-//     ) -> ResultFromCli<<Self as interactive_clap::ToCli>::CliVariant, Self::FromCliError>
-//     where
-//         Self: Sized + interactive_clap::ToCli,
-//     {
-//         let mut clap_variant = optional_clap_variant.unwrap_or_default();
-//         if clap_variant.network_name.is_none() {
-//             clap_variant.network_name = match Self::input_network_name(&context) {
-//                 Ok(Some(network_name)) => Some(network_name),
-//                 Ok(None) => return ResultFromCli::Cancel(Some(clap_variant)),
-//                 Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
-//             };
-//         }
-//         let network_name = clap_variant.network_name.clone().expect("Unexpected error");
-
-//         let new_context_scope = InteractiveClapContextScopeForOnlineArgs {
-//             network_name,
-//         };
-
-//         match Submit::from_cli(clap_variant.submit.take(), context) {
-//             ResultFromCli::Ok(submit) => {
-//                 clap_variant.submit = Some(submit);
-//                 ResultFromCli::Ok(clap_variant)
-//             }
-//             ResultFromCli::Cancel(optional_submit) => {
-//                 clap_variant.submit = optional_submit;
-//                 ResultFromCli::Cancel(Some(clap_variant))
-//             }
-//             ResultFromCli::Back => ResultFromCli::Back,
-//             ResultFromCli::Err(optional_submit, err) => {
-//                 clap_variant.submit = optional_submit;
-//                 ResultFromCli::Err(Some(clap_variant), err)
-//             }
-//         }
-
-//     }
-// }
 
 #[derive(Debug, EnumDiscriminants, Clone, clap::Parser)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]

@@ -10,7 +10,7 @@ pub fn from_cli_for_enum(
     variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
 ) -> proc_macro2::TokenStream {
     let name = &ast.ident;
-    let cli_name = syn::Ident::new(&format!("Cli{}", name), Span::call_site());
+    let cli_name = syn::Ident::new(&format!("Cli{name}"), Span::call_site());
 
     let interactive_clap_attrs_context =
         super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(ast);
