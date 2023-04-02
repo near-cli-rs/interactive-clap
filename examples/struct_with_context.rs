@@ -28,7 +28,7 @@ pub struct OfflineArgsContext {
 impl OfflineArgsContext {
     fn from_previous_context(
         _previous_context: (),
-        scope: &<OfflineArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        _scope: &<OfflineArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             some_context_field: 42,
