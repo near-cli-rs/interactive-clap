@@ -13,7 +13,7 @@ mod simple_enum;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = ())]
-#[interactive_clap(output_context = NetworkContext)]
+#[interactive_clap(output_context = OfflineArgsContext)]
 pub struct OfflineArgs {
     #[interactive_clap(named_arg)]
     ///Specify a sender
@@ -28,7 +28,7 @@ pub struct OfflineArgsContext {
 impl OfflineArgsContext {
     fn from_previous_context(
         _previous_context: (),
-        scope: &<OfflineArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        _scope: &<OfflineArgs as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self {
             some_context_field: 42,
