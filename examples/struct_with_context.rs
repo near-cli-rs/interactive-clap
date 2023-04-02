@@ -13,7 +13,7 @@ mod simple_enum;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = ())]
-#[interactive_clap(output_context = NetworkContext)]
+#[interactive_clap(output_context = OfflineArgsContext)]
 pub struct OfflineArgs {
     #[interactive_clap(named_arg)]
     ///Specify a sender
