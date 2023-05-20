@@ -62,7 +62,7 @@ pub fn vec_fn_input_arg(
                 .iter()
                 .map(|s| s.replace('\"', ""))
                 .collect::<Vec<_>>();
-            let literal = proc_macro2::Literal::string(literal_vec.join("\n  ").as_str());
+            let literal = proc_macro2::Literal::string(literal_vec.join("\n  ").trim());
 
             quote! {
                 fn #fn_input_arg(

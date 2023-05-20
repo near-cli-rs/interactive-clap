@@ -58,7 +58,7 @@ pub fn fn_choose_variant(
                 .iter()
                 .map(|s| s.replace('\"', ""))
                 .collect::<Vec<_>>();
-            let literal = proc_macro2::Literal::string(literal_vec.join("\n  ").as_str());
+            let literal = proc_macro2::Literal::string(literal_vec.join("\n  ").trim());
 
             let enum_variants = variants.iter().map(|variant| {
                 let variant_ident = &variant.ident;
