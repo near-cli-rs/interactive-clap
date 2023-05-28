@@ -48,27 +48,20 @@ pub fn vec_fn_input_arg(
                 .attrs
                 .iter()
                 .filter(|attr| attr.path.is_ident("doc"))
-                .map(|attr| {
-                    let mut literal_string = String::new();
+                .filter_map(|attr| {
                     for attr_token in attr.tokens.clone() {
                         if let proc_macro2::TokenTree::Literal(literal) = attr_token {
-                            literal_string = literal.to_string();
+                            return Some(literal);
                         }
                     }
-                    literal_string
-                })
-                .collect::<Vec<_>>();
-            let literal_vec = doc_attrs
-                .iter()
-                .map(|s| s.replace('\"', ""))
-                .collect::<Vec<_>>();
-            let literal = proc_macro2::Literal::string(literal_vec.join("\n  ").trim());
+                    None
+                });
 
             quote! {
                 fn #fn_input_arg(
                     _context: &#input_context_dir,
                 ) -> color_eyre::eyre::Result<Option<#ty>> {
-                    match inquire::CustomType::new(#literal).prompt() {
+                    match inquire::CustomType::new(concat!(#( #doc_attrs, )*)).prompt() {
                         Ok(value) => Ok(Some(value)),
                         Err(inquire::error::InquireError::OperationCanceled | inquire::error::InquireError::OperationInterrupted) => Ok(None),
                         Err(err) => Err(err.into()),

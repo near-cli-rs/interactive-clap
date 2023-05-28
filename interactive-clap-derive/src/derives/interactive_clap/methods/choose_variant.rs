@@ -44,21 +44,14 @@ pub fn fn_choose_variant(
                 .attrs
                 .iter()
                 .filter(|attr| attr.path.is_ident("doc"))
-                .map(|attr| {
-                    let mut literal_string = String::new();
+                .filter_map(|attr| {
                     for attr_token in attr.tokens.clone() {
                         if let proc_macro2::TokenTree::Literal(literal) = attr_token {
-                            literal_string = literal.to_string();
+                            return Some(literal);
                         }
                     }
-                    literal_string
-                })
-                .collect::<Vec<_>>();
-            let literal_vec = doc_attrs
-                .iter()
-                .map(|s| s.replace('\"', ""))
-                .collect::<Vec<_>>();
-            let literal = proc_macro2::Literal::string(literal_vec.join("\n  ").trim());
+                    None
+                });
 
             let enum_variants = variants.iter().map(|variant| {
                 let variant_ident = &variant.ident;
@@ -92,7 +85,7 @@ pub fn fn_choose_variant(
                 use strum::{EnumMessage, IntoEnumIterator};
 
                 let selected_variant = Select::new(
-                    #literal,
+                    concat!(#( #doc_attrs, )*),
                     #command_discriminants::iter()
                         .map(SelectVariantOrBack::Variant)
                         #actions_push_back
