@@ -61,7 +61,7 @@ pub fn vec_fn_input_arg(
                 fn #fn_input_arg(
                     _context: &#input_context_dir,
                 ) -> color_eyre::eyre::Result<Option<#ty>> {
-                    match inquire::CustomType::new(concat!(#( #doc_attrs, )*)).prompt() {
+                    match inquire::CustomType::new(concat!(#( #doc_attrs, )*).trim()).prompt() {
                         Ok(value) => Ok(Some(value)),
                         Err(inquire::error::InquireError::OperationCanceled | inquire::error::InquireError::OperationInterrupted) => Ok(None),
                         Err(err) => Err(err.into()),

@@ -85,7 +85,7 @@ pub fn fn_choose_variant(
                 use strum::{EnumMessage, IntoEnumIterator};
 
                 let selected_variant = Select::new(
-                    concat!(#( #doc_attrs, )*),
+                    concat!(#( #doc_attrs, )*).trim(),
                     #command_discriminants::iter()
                         .map(SelectVariantOrBack::Variant)
                         #actions_push_back
