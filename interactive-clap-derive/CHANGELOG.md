@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4](https://github.com/near-cli-rs/interactive-clap/compare/interactive-clap-derive-v0.2.3...interactive-clap-derive-v0.2.4) - 2023-06-02
+
+### Added
+- Add support for boolean flags (e.g. --offline) ([#6](https://github.com/near-cli-rs/interactive-clap/pull/6))
+
 ## [0.2.3](https://github.com/near-cli-rs/interactive-clap/compare/interactive-clap-derive-v0.2.2...interactive-clap-derive-v0.2.3) - 2023-05-30
 
 ### Fixed
