@@ -11,10 +11,15 @@ use inquire::Select;
 use interactive_clap::{ResultFromCli, SelectVariantOrBack, ToCliArgs};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
-mod common;
+#[derive(Debug, Clone)]
+pub enum ConnectionConfig {
+    Testnet,
+    Mainnet,
+    Betanet,
+}
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = common::ConnectionConfig)]
+#[interactive_clap(context = ConnectionConfig)]
 struct OnlineArgs {
     /// What is the name of the network
     #[interactive_clap(skip_default_input_arg)]
@@ -24,9 +29,7 @@ struct OnlineArgs {
 }
 
 impl OnlineArgs {
-    fn input_network_name(
-        _context: &common::ConnectionConfig,
-    ) -> color_eyre::eyre::Result<Option<String>> {
+    fn input_network_name(_context: &ConnectionConfig) -> color_eyre::eyre::Result<Option<String>> {
         match inquire::Text::new("Input network name").prompt() {
             Ok(value) => Ok(Some(value)),
             Err(
@@ -65,7 +68,7 @@ impl From<Submit> for CliSubmit {
 }
 
 impl interactive_clap::FromCli for Submit {
-    type FromCliContext = common::ConnectionConfig;
+    type FromCliContext = ConnectionConfig;
     type FromCliError = color_eyre::eyre::Error;
 
     fn from_cli(
@@ -101,7 +104,7 @@ impl interactive_clap::ToCliArgs for CliSubmit {
 
 impl Submit {
     fn choose_variant(
-        context: common::ConnectionConfig,
+        context: ConnectionConfig,
     ) -> ResultFromCli<
         <Self as interactive_clap::ToCli>::CliVariant,
         <Self as interactive_clap::FromCli>::FromCliError,
@@ -160,7 +163,7 @@ impl std::fmt::Display for SubmitDiscriminants {
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap, clap::Args)]
-#[interactive_clap(context = common::ConnectionConfig)]
+#[interactive_clap(context = ConnectionConfig)]
 pub struct Args {
     age: u64,
     first_name: String,
@@ -169,7 +172,7 @@ pub struct Args {
 
 fn main() -> color_eyre::Result<()> {
     let mut cli_online_args = OnlineArgs::parse();
-    let context = common::ConnectionConfig::Testnet; //#[interactive_clap(context = common::ConnectionConfig)]
+    let context = ConnectionConfig::Testnet; //#[interactive_clap(context = ConnectionConfig)]
     let cli_args = loop {
         match <OnlineArgs as interactive_clap::FromCli>::from_cli(
             Some(cli_online_args),

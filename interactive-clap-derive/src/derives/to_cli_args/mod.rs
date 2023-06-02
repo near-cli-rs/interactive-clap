@@ -39,7 +39,7 @@ pub fn impl_to_cli_args(ast: &syn::DeriveInput) -> TokenStream {
             }
             let args_push_front_vec = args_push_front_vec.into_iter().rev();
 
-            let gen = quote! {
+            quote! {
                 impl interactive_clap::ToCliArgs for #cli_name {
                     fn to_cli_args(&self) -> std::collections::VecDeque<String> {
                         #args_subcommand;
@@ -47,8 +47,7 @@ pub fn impl_to_cli_args(ast: &syn::DeriveInput) -> TokenStream {
                         args
                     }
                 }
-            };
-            gen.into()
+            }
         }
         syn::Data::Enum(syn::DataEnum { variants, .. }) => {
             let enum_variants = variants.iter().map(|variant| {
@@ -81,7 +80,7 @@ pub fn impl_to_cli_args(ast: &syn::DeriveInput) -> TokenStream {
                     ),
                 }
             });
-            let gen = quote! {
+            quote! {
                 impl interactive_clap::ToCliArgs for #cli_name {
                     fn to_cli_args(&self) -> std::collections::VecDeque<String> {
                         match self {
@@ -89,8 +88,7 @@ pub fn impl_to_cli_args(ast: &syn::DeriveInput) -> TokenStream {
                         }
                     }
                 }
-            };
-            gen.into()
+            }
         }
         _ => abort_call_site!("`#[derive(InteractiveClap)]` only supports structs and enums"),
     }
