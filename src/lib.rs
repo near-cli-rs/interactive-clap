@@ -22,6 +22,10 @@ impl ToCli for u64 {
     type CliVariant = u64;
 }
 
+impl ToCli for bool {
+    type CliVariant = bool;
+}
+
 pub trait ToInteractiveClapContextScope {
     type InteractiveClapContextScope;
 }

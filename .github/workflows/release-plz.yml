@@ -21,9 +21,6 @@ jobs:
           token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-      - name: Install packages (Linux)
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install --assume-yes libudev-dev
       - name: Run release-plz
         uses: MarcoIeni/release-plz-action@v0.5
         env:

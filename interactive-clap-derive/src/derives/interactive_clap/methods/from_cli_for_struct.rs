@@ -2,7 +2,7 @@ extern crate proc_macro;
 
 use proc_macro2::Span;
 use proc_macro_error::abort_call_site;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn;
 
 pub fn from_cli_for_struct(
@@ -22,7 +22,7 @@ pub fn from_cli_for_struct(
         .filter(|field| super::fields_without_subcommand::is_field_without_subcommand(field))
         .map(|field| {
             let ident_field = &field.clone().ident.expect("this field does not exist");
-            quote! {#ident_field}
+            quote! {#ident_field: #ident_field.into()}
         })
         .collect::<Vec<_>>();
 
@@ -99,7 +99,11 @@ pub fn from_cli_for_struct(
 fn fields_value(field: &syn::Field) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
     let fn_input_arg = syn::Ident::new(&format!("input_{}", &ident_field), Span::call_site());
-    if super::fields_without_subcommand::is_field_without_subcommand(field) {
+    if field.ty.to_token_stream().to_string() == "bool" {
+        quote! {
+            let #ident_field = clap_variant.#ident_field.clone();
+        }
+    } else if super::fields_without_subcommand::is_field_without_subcommand(field) {
         quote! {
             if clap_variant.#ident_field.is_none() {
                 clap_variant
@@ -127,7 +131,7 @@ fn field_value_named_arg(name: &syn::Ident, field: &syn::Field) -> proc_macro2::
         .flat_map(|attr| attr.tokens.clone())
         .filter(|attr_token| {
             match attr_token {
-                proc_macro2::TokenTree::Group(group) => group.stream().to_string().contains("named_arg"), 
+                proc_macro2::TokenTree::Group(group) => group.stream().to_string().contains("named_arg"),
                 _ => abort_call_site!("Only option `TokenTree::Group` is needed")
             }
         })
