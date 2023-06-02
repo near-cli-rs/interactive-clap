@@ -1,7 +1,6 @@
 extern crate proc_macro;
 
-use proc_macro::TokenStream;
-use proc_macro2::Span;
+use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort_call_site;
 use quote::quote;
 use syn;

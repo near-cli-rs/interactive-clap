@@ -8,7 +8,7 @@ pub fn cli_field_type(ty: &syn::Type) -> proc_macro2::TokenStream {
     match &ty {
         syn::Type::Path(type_path) => match type_path.path.segments.first() {
             Some(path_segment) => {
-                if path_segment.ident.eq("Option") {
+                if path_segment.ident == "Option" {
                     match &path_segment.arguments {
                         syn::PathArguments::AngleBracketed(gen_args) => {
                             let ty_option = &gen_args.args;
@@ -21,6 +21,10 @@ pub fn cli_field_type(ty: &syn::Type) -> proc_macro2::TokenStream {
                                 Option<<#ty as interactive_clap::ToCli>::CliVariant>
                             }
                         }
+                    }
+                } else if path_segment.ident == "bool" {
+                    quote! {
+                        bool
                     }
                 } else {
                     quote! {

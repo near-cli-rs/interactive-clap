@@ -1,7 +1,6 @@
 extern crate proc_macro;
 
-use proc_macro::TokenStream;
-use proc_macro2::Span;
+use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort_call_site;
 use quote::{quote, ToTokens};
 use syn;
@@ -397,7 +396,7 @@ fn for_cli_field(
         match &ty {
             syn::Type::Path(type_path) => match type_path.path.segments.first() {
                 Some(path_segment) => {
-                    if path_segment.ident.eq("Option") {
+                    if path_segment.ident == "Option" || path_segment.ident == "bool" {
                         quote! {
                             #ident_field: args.#ident_field.into()
                         }
