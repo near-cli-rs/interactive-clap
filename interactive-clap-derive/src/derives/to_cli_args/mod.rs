@@ -25,16 +25,15 @@ pub fn impl_to_cli_args(ast: &syn::DeriveInput) -> TokenStream {
                 } else {
                     args_subcommand
                 };
-                if let Some(args_without_attrs) =
+                if let Some(unnamed_args) = interactive_clap_attrs_cli_field.unnamed_args {
+                    args_push_front_vec.push(unnamed_args)
+                } else if let Some(args_without_attrs) =
                     interactive_clap_attrs_cli_field.args_without_attrs
                 {
                     args_push_front_vec.push(args_without_attrs)
                 };
                 if let Some(named_args) = interactive_clap_attrs_cli_field.named_args {
                     args_push_front_vec.push(named_args)
-                };
-                if let Some(unnamed_args) = interactive_clap_attrs_cli_field.unnamed_args {
-                    args_push_front_vec.push(unnamed_args)
                 };
             }
             let args_push_front_vec = args_push_front_vec.into_iter().rev();
