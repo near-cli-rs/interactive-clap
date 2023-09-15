@@ -8,8 +8,14 @@
 
 use interactive_clap::{ResultFromCli, ToCliArgs};
 
-mod common;
 mod simple_enum;
+
+#[derive(Debug, Clone)]
+pub enum ConnectionConfig {
+    Testnet,
+    Mainnet,
+    Betanet,
+}
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = ())]
@@ -60,7 +66,7 @@ impl From<NetworkContext> for () {
 
 #[derive(Debug)]
 pub struct NetworkContext {
-    pub connection_config: Option<common::ConnectionConfig>,
+    pub connection_config: Option<ConnectionConfig>,
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]

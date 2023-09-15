@@ -171,7 +171,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                     quote! ()
                 };
 
-            let gen = quote! {
+            quote! {
                 #[derive(Debug, Default, Clone, clap::Parser, interactive_clap::ToCliArgs)]
                 #[clap(author, version, about, long_about = None)]
                 pub struct #cli_name {
@@ -207,8 +207,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 }
 
                 #clap_enum_for_named_arg
-            };
-            gen.into()
+            }
         }
         syn::Data::Enum(syn::DataEnum { variants, .. }) => {
             let enum_variants = variants.iter().map(|variant| {
@@ -300,7 +299,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
             let fn_from_cli_for_enum =
                 self::methods::from_cli_for_enum::from_cli_for_enum(ast, variants);
 
-            let gen = quote! {
+            quote! {
                 #[derive(Debug, Clone, clap::Parser, interactive_clap::ToCliArgs)]
                 pub enum #cli_name {
                     #( #enum_variants, )*
@@ -333,8 +332,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                         <#cli_name as clap::Parser>::parse()
                     }
                 }
-            };
-            gen.into()
+            }
         }
         _ => abort_call_site!("`#[derive(InteractiveClap)]` only supports structs and enums"),
     }

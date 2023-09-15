@@ -40,7 +40,7 @@ impl interactive_clap::FromCli for Args {
                 Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let age = clap_variant.age;
+        let _age = clap_variant.age;
         if clap_variant.first_name.is_none() {
             clap_variant.first_name = match Self::input_first_name(&context) {
                 Ok(Some(first_name)) => Some(first_name),
@@ -48,7 +48,7 @@ impl interactive_clap::FromCli for Args {
                 Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let first_name = clap_variant.first_name.clone().expect("Unexpected error");
+        let _first_name = clap_variant.first_name.clone().expect("Unexpected error");
         if clap_variant.second_name.is_none() {
             clap_variant.second_name = match Self::input_second_name(&context) {
                 Ok(Some(second_name)) => Some(second_name),
@@ -56,7 +56,7 @@ impl interactive_clap::FromCli for Args {
                 Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
             };
         }
-        let second_name = clap_variant.second_name.clone().expect("Unexpected error");
+        let _second_name = clap_variant.second_name.clone().expect("Unexpected error");
         ResultFromCli::Ok(clap_variant)
     }
 }

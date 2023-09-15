@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //This example shows how to parse data from the command line to an enum using the "interactive-clap" macro.
 
 // 1) build an example: cargo build --example simple_enum
