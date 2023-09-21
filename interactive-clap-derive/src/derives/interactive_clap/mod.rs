@@ -189,12 +189,16 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 impl #name {
                     #(#vec_fn_input_arg)*
 
-                    fn try_parse() -> Result<#cli_name, clap::Error> {
+                    pub fn try_parse() -> Result<#cli_name, clap::Error> {
                         <#cli_name as clap::Parser>::try_parse()
                     }
 
-                    fn parse() -> #cli_name {
+                    pub fn parse() -> #cli_name {
                         <#cli_name as clap::Parser>::parse()
+                    }
+
+                    pub fn try_parse_from(s: &str) -> Result<#cli_name, clap::Error> {
+                        <#cli_name as clap::Parser>::try_parse_from(s.split(" "))
                     }
                 }
 
@@ -324,12 +328,16 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 impl #name {
                     #fn_choose_variant
 
-                    fn try_parse() -> Result<#cli_name, clap::Error> {
+                    pub fn try_parse() -> Result<#cli_name, clap::Error> {
                         <#cli_name as clap::Parser>::try_parse()
                     }
 
-                    fn parse() -> #cli_name {
+                    pub fn parse() -> #cli_name {
                         <#cli_name as clap::Parser>::parse()
+                    }
+
+                    pub fn try_parse_from(s: &str) -> Result<#cli_name, clap::Error> {
+                        <#cli_name as clap::Parser>::try_parse_from(s.split(" "))
                     }
                 }
             }
