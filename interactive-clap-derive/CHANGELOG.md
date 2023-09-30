@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5](https://github.com/near-cli-rs/interactive-clap/compare/interactive-clap-derive-v0.2.4...interactive-clap-derive-v0.2.5) - 2023-09-21
+
+### Fixed
+- fixed unnamed_args/args_without_attrs conflict
+
+### Other
+- added fn try_parse_from()
+- Merge branch 'master' of https://github.com/FroVolod/interactive-clap
+
 ## [0.2.4](https://github.com/near-cli-rs/interactive-clap/compare/interactive-clap-derive-v0.2.3...interactive-clap-derive-v0.2.4) - 2023-06-02
 
 ### Added
