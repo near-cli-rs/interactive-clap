@@ -20,21 +20,8 @@ pub fn impl_to_cli_args(ast: &syn::DeriveInput) -> TokenStream {
                 let interactive_clap_attrs_cli_field = self::methods::interactive_clap_attrs_cli_field::InteractiveClapAttrsCliField::new(field.clone());
                 if let Some(subcommand_args) = interactive_clap_attrs_cli_field.subcommand_args {
                     args_subcommand = subcommand_args
-                };
-                if let Some(args_without_attrs) =
-                    interactive_clap_attrs_cli_field.args_without_attrs
-                {
-                    if let Some(unnamed_args) = interactive_clap_attrs_cli_field.unnamed_args {
-                        args_push_front_vec.push(unnamed_args)
-                    } else if let Some(named_args) = interactive_clap_attrs_cli_field.named_args {
-                        args_push_front_vec.push(named_args)
-                    } else {
-                        args_push_front_vec.push(args_without_attrs)
-                    }
-                } else if let Some(unnamed_args) = interactive_clap_attrs_cli_field.unnamed_args {
-                    args_push_front_vec.push(unnamed_args)
-                } else if let Some(named_args) = interactive_clap_attrs_cli_field.named_args {
-                    args_push_front_vec.push(named_args)
+                } else {
+                    args_push_front_vec.push(interactive_clap_attrs_cli_field.token_stream_args);
                 };
             }
             let args_push_front_vec = args_push_front_vec.into_iter().rev();
