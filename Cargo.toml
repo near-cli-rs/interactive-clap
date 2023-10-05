@@ -5,7 +5,7 @@ members = [
 
 [package]
 name = "interactive-clap"
-version = "0.2.5"
+version = "0.2.6"
 authors = ["FroVolod <frol_off@meta.ua>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
@@ -15,7 +15,7 @@ description = "Interactive mode extension crate to Command Line Arguments Parser
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-interactive-clap-derive = { path = "interactive-clap-derive", version = "0.2.5" }
+interactive-clap-derive = { path = "interactive-clap-derive", version = "0.2.6" }
 strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
 
