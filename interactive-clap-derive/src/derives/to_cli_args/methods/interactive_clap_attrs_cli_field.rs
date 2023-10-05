@@ -93,18 +93,12 @@ impl InteractiveClapAttrsCliField {
                 }
             }
         };
-        let token_stream_args: proc_macro2::TokenStream = if !args_without_attrs.is_empty() {
-            if !named_args.is_empty() {
-                named_args
-            } else if !unnamed_args.is_empty() {
-                unnamed_args
-            } else {
-                args_without_attrs
-            }
-        } else if !named_args.is_empty() {
+        let token_stream_args: proc_macro2::TokenStream = if !named_args.is_empty() {
             named_args
         } else if !unnamed_args.is_empty() {
             unnamed_args
+        } else if !args_without_attrs.is_empty() {
+            args_without_attrs
         } else {
             quote!()
         };
