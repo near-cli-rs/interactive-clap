@@ -6,16 +6,14 @@ use quote::{quote, ToTokens};
 use syn;
 
 #[derive(Debug, Clone)]
-pub struct InteractiveClapAttrsCliField {
-    pub ident_field: syn::Ident,
-    pub subcommand_args: Option<proc_macro2::TokenStream>,
-    pub token_stream_args: proc_macro2::TokenStream,
+pub enum InteractiveClapAttrsCliField {
+    RegularField(proc_macro2::TokenStream),
+    SubcommandField(proc_macro2::TokenStream),
 }
 
 impl InteractiveClapAttrsCliField {
     pub fn new(field: syn::Field) -> Self {
         let ident_field = field.ident.clone().expect("this field does not exist");
-        let mut subcommand_args: Option<proc_macro2::TokenStream> = None;
         let mut args_without_attrs = quote!();
         let mut named_args = quote!();
         let mut unnamed_args = quote!();
@@ -36,14 +34,15 @@ impl InteractiveClapAttrsCliField {
                                     match &item {
                                         proc_macro2::TokenTree::Ident(ident) => {
                                             if ident == "subcommand" {
-                                                subcommand_args = Some(quote! {
+                                                return Self::SubcommandField(quote! {
                                                     let mut args = self
                                                     .#ident_field
                                                     .as_ref()
                                                     .map(|subcommand| subcommand.to_cli_args())
                                                     .unwrap_or_default();
                                                 });
-                                            } else if ident == "value_enum" {
+                                            }
+                                            if ident == "value_enum" {
                                                 args_without_attrs = quote! {
                                                     if let Some(arg) = &self.#ident_field {
                                                         args.push_front(arg.to_string())
@@ -102,10 +101,6 @@ impl InteractiveClapAttrsCliField {
         } else {
             quote!()
         };
-        Self {
-            ident_field,
-            subcommand_args,
-            token_stream_args,
-        }
+        Self::RegularField(token_stream_args)
     }
 }

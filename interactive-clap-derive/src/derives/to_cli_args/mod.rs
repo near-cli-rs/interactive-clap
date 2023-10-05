@@ -5,6 +5,8 @@ use proc_macro_error::abort_call_site;
 use quote::quote;
 use syn;
 
+use self::methods::interactive_clap_attrs_cli_field::InteractiveClapAttrsCliField;
+
 mod methods;
 
 pub fn impl_to_cli_args(ast: &syn::DeriveInput) -> TokenStream {
@@ -17,12 +19,14 @@ pub fn impl_to_cli_args(ast: &syn::DeriveInput) -> TokenStream {
             let mut args_push_front_vec: Vec<proc_macro2::TokenStream> = Vec::new();
 
             for field in data_struct.clone().fields.iter() {
-                let interactive_clap_attrs_cli_field = self::methods::interactive_clap_attrs_cli_field::InteractiveClapAttrsCliField::new(field.clone());
-                if let Some(subcommand_args) = interactive_clap_attrs_cli_field.subcommand_args {
-                    args_subcommand = subcommand_args
-                } else {
-                    args_push_front_vec.push(interactive_clap_attrs_cli_field.token_stream_args);
-                };
+                match InteractiveClapAttrsCliField::new(field.clone()) {
+                    InteractiveClapAttrsCliField::RegularField(regular_field_args) => {
+                        args_push_front_vec.push(regular_field_args)
+                    }
+                    InteractiveClapAttrsCliField::SubcommandField(subcommand_args) => {
+                        args_subcommand = subcommand_args
+                    }
+                }
             }
             let args_push_front_vec = args_push_front_vec.into_iter().rev();
 
