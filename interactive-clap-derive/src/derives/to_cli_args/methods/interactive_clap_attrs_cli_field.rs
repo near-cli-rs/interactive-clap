@@ -6,20 +6,14 @@ use quote::{quote, ToTokens};
 use syn;
 
 #[derive(Debug, Clone)]
-pub struct InteractiveClapAttrsCliField {
-    pub ident_field: syn::Ident,
-    pub args_without_attrs: Option<proc_macro2::TokenStream>,
-    pub named_args: Option<proc_macro2::TokenStream>,
-    pub unnamed_args: Option<proc_macro2::TokenStream>,
-    pub subcommand_args: Option<proc_macro2::TokenStream>,
+pub enum InteractiveClapAttrsCliField {
+    RegularField(proc_macro2::TokenStream),
+    SubcommandField(proc_macro2::TokenStream),
 }
 
 impl InteractiveClapAttrsCliField {
     pub fn new(field: syn::Field) -> Self {
         let ident_field = field.ident.clone().expect("this field does not exist");
-        let mut subcommand_args = quote! {
-            let mut args = std::collections::VecDeque::new();
-        };
         let mut args_without_attrs = quote!();
         let mut named_args = quote!();
         let mut unnamed_args = quote!();
@@ -40,14 +34,15 @@ impl InteractiveClapAttrsCliField {
                                     match &item {
                                         proc_macro2::TokenTree::Ident(ident) => {
                                             if ident == "subcommand" {
-                                                subcommand_args = quote! {
+                                                return Self::SubcommandField(quote! {
                                                     let mut args = self
                                                     .#ident_field
                                                     .as_ref()
                                                     .map(|subcommand| subcommand.to_cli_args())
                                                     .unwrap_or_default();
-                                                };
-                                            } else if ident == "value_enum" {
+                                                });
+                                            }
+                                            if ident == "value_enum" {
                                                 args_without_attrs = quote! {
                                                     if let Some(arg) = &self.#ident_field {
                                                         args.push_front(arg.to_string())
@@ -97,18 +92,15 @@ impl InteractiveClapAttrsCliField {
                 }
             }
         };
-        Self {
-            ident_field,
-            args_without_attrs: Some(args_without_attrs),
-            named_args: Some(named_args.clone()),
-            unnamed_args: {
-                if !named_args.is_empty() {
-                    None
-                } else {
-                    Some(unnamed_args)
-                }
-            },
-            subcommand_args: Some(subcommand_args),
-        }
+        let token_stream_args: proc_macro2::TokenStream = if !named_args.is_empty() {
+            named_args
+        } else if !unnamed_args.is_empty() {
+            unnamed_args
+        } else if !args_without_attrs.is_empty() {
+            args_without_attrs
+        } else {
+            quote!()
+        };
+        Self::RegularField(token_stream_args)
     }
 }
