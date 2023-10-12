@@ -39,6 +39,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                                             | group.stream().to_string().contains("value_enum")
                                             | group.stream().to_string().contains("long")
                                             | (group.stream().to_string() == *"skip")
+                                            | (group.stream().to_string() == *"flatten")
                                         {
                                             clap_attr_vec.push(group.stream())
                                         } else if group.stream().to_string().contains("named_arg") {
