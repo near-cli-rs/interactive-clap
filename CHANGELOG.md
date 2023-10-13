@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.7](https://github.com/near-cli-rs/interactive-clap/compare/interactive-clap-v0.2.6...interactive-clap-v0.2.7) - 2023-10-13
+
+### Other
+- updated the following local packages: interactive-clap-derive
+
 ## [0.2.6](https://github.com/near-cli-rs/interactive-clap/compare/interactive-clap-v0.2.5...interactive-clap-v0.2.6) - 2023-10-05
 
 ### Fixed

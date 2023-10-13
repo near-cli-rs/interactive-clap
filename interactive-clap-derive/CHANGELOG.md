@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.7](https://github.com/near-cli-rs/interactive-clap/compare/interactive-clap-derive-v0.2.6...interactive-clap-derive-v0.2.7) - 2023-10-13
+
+### Added
+- Add support for "flatten" ([#11](https://github.com/near-cli-rs/interactive-clap/pull/11))
+
 ## [0.2.6](https://github.com/near-cli-rs/interactive-clap/compare/interactive-clap-derive-v0.2.5...interactive-clap-derive-v0.2.6) - 2023-10-05
 
 ### Fixed
