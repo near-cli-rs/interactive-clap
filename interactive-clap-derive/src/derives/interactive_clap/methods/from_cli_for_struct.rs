@@ -99,8 +99,26 @@ pub fn from_cli_for_struct(
 fn fields_value(field: &syn::Field) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
     let fn_input_arg = syn::Ident::new(&format!("input_{}", &ident_field), Span::call_site());
-    if field.ty.to_token_stream().to_string() == "bool" {
+    if field.ty.to_token_stream().to_string() == "bool"
+        || super::skip_interactive_input::is_skip_interactive_input(field)
+    {
         quote! {
+            let #ident_field = clap_variant.#ident_field.clone();
+        }
+    } else if field
+        .ty
+        .to_token_stream()
+        .to_string()
+        .starts_with("Option <")
+    {
+        quote! {
+            if clap_variant.#ident_field.is_none() {
+                clap_variant
+                    .#ident_field = match Self::#fn_input_arg(&context) {
+                    Ok(optional_field) => optional_field,
+                    Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+                };
+            };
             let #ident_field = clap_variant.#ident_field.clone();
         }
     } else if super::fields_without_subcommand::is_field_without_subcommand(field) {
