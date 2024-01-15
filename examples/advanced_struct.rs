@@ -5,6 +5,8 @@
 // 3) run an example: ./advanced_struct (without parameters) => entered interactive mode
 //                    ./advanced_struct --age-full-years 30 --first-name QWE --second-name QWERTY --favorite-color red =>
 //                                    => cli_args: CliArgs { age: Some(30), first_name: Some("QWE"), second_name: Some("QWERTY"), favorite_color: Some(Red) }
+//                    ./advanced_struct --first-name QWE --second-name QWERTY --favorite-color red =>
+//                                    => cli_args: CliArgs { age: None, first_name: Some("QWE"), second_name: Some("QWERTY"), favorite_color: Some(Red) }
 // To learn more about the parameters, use "help" flag: ./advanced_struct --help
 
 use inquire::Select;
@@ -12,13 +14,13 @@ use interactive_clap::{ResultFromCli, ToCliArgs};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(skip_default_from_cli)]
 struct Args {
     #[interactive_clap(long = "age-full-years")]
-    #[interactive_clap(skip_default_input_arg)]
+    #[interactive_clap(skip_interactive_input)]
+    /// If you want, enter the full age on the command line
     age: Option<u64>,
     #[interactive_clap(long)]
-    ///What is your first name?
+    /// What is your first name?
     first_name: String,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
@@ -29,67 +31,7 @@ struct Args {
     favorite_color: ColorPalette,
 }
 
-impl interactive_clap::FromCli for Args {
-    type FromCliContext = ();
-    type FromCliError = color_eyre::eyre::Error;
-    fn from_cli(
-        optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> ResultFromCli<<Self as interactive_clap::ToCli>::CliVariant, Self::FromCliError>
-    where
-        Self: Sized + interactive_clap::ToCli,
-    {
-        let mut clap_variant = optional_clap_variant.unwrap_or_default();
-        if clap_variant.age.is_none() {
-            clap_variant.age = match Self::input_age(&context) {
-                Ok(optional_age) => optional_age,
-                Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let _age = clap_variant.age;
-        if clap_variant.first_name.is_none() {
-            clap_variant.first_name = match Self::input_first_name(&context) {
-                Ok(Some(first_name)) => Some(first_name),
-                Ok(None) => return ResultFromCli::Cancel(Some(clap_variant)),
-                Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let _first_name = clap_variant.first_name.clone().expect("Unexpected error");
-        if clap_variant.second_name.is_none() {
-            clap_variant.second_name = match Self::input_second_name(&context) {
-                Ok(Some(second_name)) => Some(second_name),
-                Ok(None) => return ResultFromCli::Cancel(Some(clap_variant)),
-                Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let _second_name = clap_variant.second_name.clone().expect("Unexpected error");
-        if clap_variant.favorite_color.is_none() {
-            clap_variant.favorite_color = match Self::input_favorite_color(&context) {
-                Ok(Some(favorite_color)) => Some(favorite_color),
-                Ok(None) => return ResultFromCli::Cancel(Some(clap_variant)),
-                Err(err) => return ResultFromCli::Err(Some(clap_variant), err),
-            };
-        }
-        let _favorite_color = clap_variant
-            .favorite_color
-            .clone()
-            .expect("Unexpected error");
-        ResultFromCli::Ok(clap_variant)
-    }
-}
-
 impl Args {
-    fn input_age(_context: &()) -> color_eyre::eyre::Result<Option<u64>> {
-        match inquire::CustomType::new("Input age full years".to_string().as_str()).prompt() {
-            Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
-            Err(err) => Err(err.into()),
-        }
-    }
-
     fn input_second_name(_context: &()) -> color_eyre::eyre::Result<Option<String>> {
         match inquire::Text::new("Input second name".to_string().as_str()).prompt() {
             Ok(value) => Ok(Some(value)),

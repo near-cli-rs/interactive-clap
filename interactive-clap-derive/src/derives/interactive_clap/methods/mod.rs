@@ -6,3 +6,4 @@ pub mod from_cli_for_enum;
 pub mod from_cli_for_struct;
 pub mod input_arg;
 pub mod interactive_clap_attrs_context;
+pub mod skip_interactive_input;

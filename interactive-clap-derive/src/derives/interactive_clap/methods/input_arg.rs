@@ -44,6 +44,10 @@ pub fn vec_fn_input_arg(
                 };
             }
 
+            if super::skip_interactive_input::is_skip_interactive_input(field) {
+                return quote! {};
+            }
+
             let doc_attrs = field
                 .attrs
                 .iter()
