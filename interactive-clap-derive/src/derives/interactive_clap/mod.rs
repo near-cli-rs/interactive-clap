@@ -368,7 +368,9 @@ fn context_scope_for_struct(
 fn context_scope_for_struct_field(field: &syn::Field) -> proc_macro2::TokenStream {
     let ident_field = &field.ident.clone().expect("this field does not exist");
     let ty = &field.ty;
-    if self::methods::fields_without_subcommand::is_field_without_subcommand(field) {
+    if self::methods::fields_without_subcommand::is_field_without_subcommand(field)
+        && self::methods::fields_without_flatten::is_field_without_flatten(field)
+    {
         quote! {
             pub #ident_field: #ty
         }
