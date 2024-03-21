@@ -42,6 +42,13 @@ impl InteractiveClapAttrsCliField {
                                                     .unwrap_or_default();
                                                 });
                                             }
+                                            if ident == "flatten" {
+                                                args_without_attrs = quote! {
+                                                    if let Some(arg) = &self.#ident_field {
+                                                        args.append(&mut arg.to_cli_args())
+                                                    }
+                                                };
+                                            }
                                             if ident == "value_enum" {
                                                 args_without_attrs = quote! {
                                                     if let Some(arg) = &self.#ident_field {
