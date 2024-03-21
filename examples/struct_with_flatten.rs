@@ -14,7 +14,6 @@ struct Account {
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
     social_db_folder: Option<String>,
-    #[interactive_clap(skip_default_input_arg)]
     #[interactive_clap(flatten)]
     account: Sender,
 }

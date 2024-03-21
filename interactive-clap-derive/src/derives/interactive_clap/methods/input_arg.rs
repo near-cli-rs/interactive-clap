@@ -12,9 +12,9 @@ pub fn vec_fn_input_arg(
         super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(ast);
     let vec_fn_input_arg = fields
         .iter()
-        .filter(|field| super::fields_without_subcommand::is_field_without_subcommand(field))
+        .filter(|field| !super::fields_with_subcommand::is_field_with_subcommand(field))
         .filter(|field| {
-            super::fields_without_skip_default_input_arg::is_field_without_skip_default_input_arg(
+            !super::fields_with_skip_default_input_arg::is_field_with_skip_default_input_arg(
                 field,
             )
         })
