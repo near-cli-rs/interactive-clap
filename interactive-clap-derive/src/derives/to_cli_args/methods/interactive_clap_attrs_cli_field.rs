@@ -47,7 +47,7 @@ impl InteractiveClapAttrsCliField {
                                                     if let Some(arg) = &self.#ident_field {
                                                         let mut to_cli_args = arg.to_cli_args();
                                                         to_cli_args.append(&mut args);
-                                                        args.append(&mut to_cli_args)
+                                                        std::mem::swap(&mut args, &mut to_cli_args);
                                                     }
                                                 };
                                             }
