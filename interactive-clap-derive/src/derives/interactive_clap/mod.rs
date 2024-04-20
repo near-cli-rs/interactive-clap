@@ -42,7 +42,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                                             | (group.stream().to_string() == *"flatten")
                                         {
                                             clap_attr_vec.push(group.stream())
-                                        } else if group.stream().to_string().contains("named_arg") {
+                                        } else if group.stream().to_string() == *"named_arg" {
                                             let ident_subcommand =
                                                 syn::Ident::new("subcommand", Span::call_site());
                                             clap_attr_vec.push(quote! {#ident_subcommand});
@@ -70,6 +70,12 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                                         };
                                         if group.stream().to_string().contains("feature") {
                                             cfg_attr_vec.push(attr.into_token_stream())
+                                        };
+                                        if group.stream().to_string().contains("named_arg_flatten")
+                                        {
+                                            let ident_named_arg_flatten =
+                                                syn::Ident::new("flatten", Span::call_site());
+                                            clap_attr_vec.push(quote! {#ident_named_arg_flatten});
                                         };
                                         if group.stream().to_string() == *"skip" {
                                             ident_skip_field_vec.push(ident_field.clone());
@@ -134,7 +140,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                     .flat_map(|attr| attr.tokens.clone())
                     .filter(|attr_token| {
                         match attr_token {
-                            proc_macro2::TokenTree::Group(group) => group.stream().to_string().contains("named_arg"),
+                            proc_macro2::TokenTree::Group(group) => group.stream().to_string() == *"named_arg",
                             _ => abort_call_site!("Only option `TokenTree::Group` is needed")
                         }
                     })
@@ -363,9 +369,7 @@ fn context_scope_for_struct(
 fn context_scope_for_struct_field(field: &syn::Field) -> proc_macro2::TokenStream {
     let ident_field = &field.ident.clone().expect("this field does not exist");
     let ty = &field.ty;
-    if !self::methods::fields_with_subcommand::is_field_with_subcommand(field)
-        && !self::methods::fields_with_flatten::is_field_with_flatten(field)
-    {
+    if !self::methods::fields_with_subcommand::is_field_with_subcommand(field) {
         quote! {
             pub #ident_field: #ty
         }
