@@ -2,7 +2,7 @@ extern crate proc_macro;
 
 use syn;
 
-/// This function selects fields with:  subcommand, named_arg, named_arg_flatten
+/// This function selects fields with:  subcommand, named_arg
 pub fn is_field_with_subcommand(field: &syn::Field) -> bool {
     if field.attrs.is_empty() {
         return false;
@@ -12,7 +12,7 @@ pub fn is_field_with_subcommand(field: &syn::Field) -> bool {
         .iter()
         .flat_map(|attr| attr.tokens.clone())
         .any(|attr_token| {
-            attr_token.to_string().contains("named_arg")
-                || attr_token.to_string().contains("subcommand")
+            attr_token.to_string().contains("subcommand")
+                | attr_token.to_string().contains("named_arg")
         })
 }

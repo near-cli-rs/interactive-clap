@@ -17,9 +17,12 @@ pub fn from_cli_for_struct(
         return quote!();
     };
 
-    let fields_without_subcommand = fields
+    let fields_without_subcommand_and_subargs = fields
         .iter()
-        .filter(|field| !super::fields_with_subcommand::is_field_with_subcommand(field))
+        .filter(|field| {
+            !super::fields_with_subcommand::is_field_with_subcommand(field)
+                & !super::fields_with_subargs::is_field_with_subargs(field)
+        })
         .map(|field| {
             let ident_field = &field.clone().ident.expect("this field does not exist");
             quote! {#ident_field: #ident_field.into()}
@@ -43,9 +46,9 @@ pub fn from_cli_for_struct(
         .find(|token_stream| !token_stream.is_empty())
         .unwrap_or(quote!());
 
-    let field_value_named_arg_flatten = fields
+    let field_value_subargs = fields
         .iter()
-        .map(field_value_named_arg_flatten)
+        .map(field_value_subargs)
         .find(|token_stream| !token_stream.is_empty())
         .unwrap_or(quote!());
 
@@ -58,7 +61,7 @@ pub fn from_cli_for_struct(
         Span::call_site(),
     );
     let new_context_scope = quote! {
-        let new_context_scope = #interactive_clap_context_scope_for_struct { #(#fields_without_subcommand,)* };
+        let new_context_scope = #interactive_clap_context_scope_for_struct { #(#fields_without_subcommand_and_subargs,)* };
     };
 
     let output_context = match &interactive_clap_attrs_context.output_context_dir {
@@ -86,7 +89,7 @@ pub fn from_cli_for_struct(
                 #(#fields_value)*
                 #new_context_scope
                 #output_context
-                #field_value_named_arg_flatten
+                #field_value_subargs
                 #field_value_named_arg
                 #field_value_subcommand;
                 interactive_clap::ResultFromCli::Ok(clap_variant)
@@ -120,7 +123,9 @@ fn fields_value(field: &syn::Field) -> proc_macro2::TokenStream {
             };
             let #ident_field = clap_variant.#ident_field.clone();
         }
-    } else if !super::fields_with_subcommand::is_field_with_subcommand(field) {
+    } else if !super::fields_with_subcommand::is_field_with_subcommand(field)
+        & !super::fields_with_subargs::is_field_with_subargs(field)
+    {
         quote! {
             if clap_variant.#ident_field.is_none() {
                 clap_variant
@@ -236,7 +241,7 @@ fn field_value_subcommand(field: &syn::Field) -> proc_macro2::TokenStream {
     }
 }
 
-fn field_value_named_arg_flatten(field: &syn::Field) -> proc_macro2::TokenStream {
+fn field_value_subargs(field: &syn::Field) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
     let ty = &field.ty;
     if field.attrs.is_empty() {
@@ -247,7 +252,7 @@ fn field_value_named_arg_flatten(field: &syn::Field) -> proc_macro2::TokenStream
             .flat_map(|attr| attr.tokens.clone())
             .filter(|attr_token| {
                 match attr_token {
-                    proc_macro2::TokenTree::Group(group) => group.stream().to_string().contains("named_arg_flatten"),
+                    proc_macro2::TokenTree::Group(group) => group.stream().to_string().contains("subargs"),
                     _ => abort_call_site!("Only option `TokenTree::Group` is needed")
                 }
             })

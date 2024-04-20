@@ -1,10 +1,10 @@
-// This example shows additional functionality of the "interactive-clap" macro for parsing command-line data into a structure using the macro's named_arg_flatten attributes.
+// This example shows additional functionality of the "interactive-clap" macro for parsing command-line data into a structure using the macro's subargs attributes.
 
-// 1) build an example: cargo build --example struct_with_named_arg_flatten
+// 1) build an example: cargo build --example struct_with_subargs
 // 2) go to the `examples` folder: cd target/debug/examples
-// 3) run an example: ./struct_with_named_arg_flatten (without parameters) => entered interactive mode
-//                    ./struct_with_named_arg_flatten QWERTY 18 => account: CliAccount { social_db_folder: None, account: Some(CliSender { sender_account_id: Some("QWERTY"), age: Some(18) }) }
-// To learn more about the parameters, use "help" flag: ./struct_with_named_arg_flatten --help
+// 3) run an example: ./struct_with_subargs (without parameters) => entered interactive mode
+//                    ./struct_with_subargs QWERTY 18 => account: CliAccount { social_db_folder: None, account: Some(CliSender { sender_account_id: Some("QWERTY"), age: Some(18) }) }
+// To learn more about the parameters, use "help" flag: ./struct_with_subargs --help
 
 use interactive_clap::{ResultFromCli, ToCliArgs};
 
@@ -14,7 +14,7 @@ struct Account {
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
     social_db_folder: Option<String>,
-    #[interactive_clap(named_arg_flatten)]
+    #[interactive_clap(subargs)]
     account: Sender,
 }
 
