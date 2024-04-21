@@ -14,5 +14,6 @@ pub fn is_field_with_skip_default_input_arg(field: &syn::Field) -> bool {
         .any(|attr_token| {
             attr_token.to_string().contains("skip_default_input_arg")
                 || attr_token.to_string().contains("flatten")
+                || attr_token.to_string().contains("subargs")
         })
 }

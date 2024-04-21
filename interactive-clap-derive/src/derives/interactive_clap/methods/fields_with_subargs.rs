@@ -2,7 +2,7 @@ extern crate proc_macro;
 
 use syn;
 
-pub fn is_field_with_flatten(field: &syn::Field) -> bool {
+pub fn is_field_with_subargs(field: &syn::Field) -> bool {
     if field.attrs.is_empty() {
         return false;
     }
@@ -10,5 +10,5 @@ pub fn is_field_with_flatten(field: &syn::Field) -> bool {
         .attrs
         .iter()
         .flat_map(|attr| attr.tokens.clone())
-        .any(|attr_token| attr_token.to_string().contains("flatten"))
+        .any(|attr_token| attr_token.to_string().contains("subargs"))
 }

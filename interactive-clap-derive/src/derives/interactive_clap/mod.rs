@@ -31,18 +31,18 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                     let mut clap_attr_vec: Vec<proc_macro2::TokenStream> = Vec::new();
                     let mut cfg_attr_vec: Vec<proc_macro2::TokenStream> = Vec::new();
                     for attr in &field.attrs {
-                        if attr.path.is_ident("interactive_clap") | attr.path.is_ident("cfg") {
+                        if attr.path.is_ident("interactive_clap") || attr.path.is_ident("cfg") {
                             for attr_token in attr.tokens.clone() {
                                 match attr_token {
                                     proc_macro2::TokenTree::Group(group) => {
                                         if group.stream().to_string().contains("subcommand")
-                                            | group.stream().to_string().contains("value_enum")
-                                            | group.stream().to_string().contains("long")
-                                            | (group.stream().to_string() == *"skip")
-                                            | (group.stream().to_string() == *"flatten")
+                                            || group.stream().to_string().contains("value_enum")
+                                            || group.stream().to_string().contains("long")
+                                            || (group.stream().to_string() == *"skip")
+                                            || (group.stream().to_string() == *"flatten")
                                         {
                                             clap_attr_vec.push(group.stream())
-                                        } else if group.stream().to_string().contains("named_arg") {
+                                        } else if group.stream().to_string() == *"named_arg" {
                                             let ident_subcommand =
                                                 syn::Ident::new("subcommand", Span::call_site());
                                             clap_attr_vec.push(quote! {#ident_subcommand});
@@ -70,6 +70,11 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                                         };
                                         if group.stream().to_string().contains("feature") {
                                             cfg_attr_vec.push(attr.into_token_stream())
+                                        };
+                                        if group.stream().to_string().contains("subargs") {
+                                            let ident_subargs =
+                                                syn::Ident::new("flatten", Span::call_site());
+                                            clap_attr_vec.push(quote! {#ident_subargs});
                                         };
                                         if group.stream().to_string() == *"skip" {
                                             ident_skip_field_vec.push(ident_field.clone());
@@ -134,7 +139,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                     .flat_map(|attr| attr.tokens.clone())
                     .filter(|attr_token| {
                         match attr_token {
-                            proc_macro2::TokenTree::Group(group) => group.stream().to_string().contains("named_arg"),
+                            proc_macro2::TokenTree::Group(group) => group.stream().to_string() == *"named_arg",
                             _ => abort_call_site!("Only option `TokenTree::Group` is needed")
                         }
                     })
@@ -364,7 +369,7 @@ fn context_scope_for_struct_field(field: &syn::Field) -> proc_macro2::TokenStrea
     let ident_field = &field.ident.clone().expect("this field does not exist");
     let ty = &field.ty;
     if !self::methods::fields_with_subcommand::is_field_with_subcommand(field)
-        && !self::methods::fields_with_flatten::is_field_with_flatten(field)
+        && !self::methods::fields_with_subargs::is_field_with_subargs(field)
     {
         quote! {
             pub #ident_field: #ty

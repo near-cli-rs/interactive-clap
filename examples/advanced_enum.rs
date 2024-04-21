@@ -3,8 +3,8 @@
 // 1) build an example: cargo build --example advanced_enum
 // 2) go to the `examples` folder: cd target/debug/examples
 // 3) run an example: ./advanced_enum (without parameters) => entered interactive mode
-//                    ./advanced_enum network              => mode: Ok(Network)
-//                    ./advanced_enum offline              => mode: Ok(Offline)
+//                    ./advanced_enum network 23 QWE ASDFG => mode: Network(CliArgs { age: Some(23), first_name: Some("QWE"), second_name: Some("ASDFG") })
+//                    ./advanced_enum offline              => mode: Offline
 // To learn more about the parameters, use "help" flag: ./advanced_enum --help
 
 use interactive_clap::{ResultFromCli, ToCliArgs};
@@ -62,7 +62,7 @@ fn main() -> color_eyre::Result<()> {
             }
         }
     };
-    println!("cli_mode: {:?}", mode);
+    println!("mode: {:?}", mode);
     println!(
         "Your console command:  {}",
         shell_words::join(&mode.to_cli_args())
