@@ -21,7 +21,7 @@ pub fn from_cli_for_struct(
         .iter()
         .filter(|field| {
             !super::fields_with_subcommand::is_field_with_subcommand(field)
-                & !super::fields_with_subargs::is_field_with_subargs(field)
+                && !super::fields_with_subargs::is_field_with_subargs(field)
         })
         .map(|field| {
             let ident_field = &field.clone().ident.expect("this field does not exist");
@@ -124,7 +124,7 @@ fn fields_value(field: &syn::Field) -> proc_macro2::TokenStream {
             let #ident_field = clap_variant.#ident_field.clone();
         }
     } else if !super::fields_with_subcommand::is_field_with_subcommand(field)
-        & !super::fields_with_subargs::is_field_with_subargs(field)
+        && !super::fields_with_subargs::is_field_with_subargs(field)
     {
         quote! {
             if clap_variant.#ident_field.is_none() {
