@@ -1,6 +1,6 @@
 [package]
 name = "interactive-clap-derive"
-version = "0.2.9"
+version = "0.2.10"
 authors = ["FroVolod <frol_off@meta.ua>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
