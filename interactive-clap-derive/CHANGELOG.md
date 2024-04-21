@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.10](https://github.com/near-cli-rs/interactive-clap/compare/interactive-clap-derive-v0.2.9...interactive-clap-derive-v0.2.10) - 2024-04-21
+
+### Added
+- Add support for "subargs" ([#17](https://github.com/near-cli-rs/interactive-clap/pull/17))
+
 ## [0.2.9](https://github.com/near-cli-rs/interactive-clap/compare/interactive-clap-derive-v0.2.8...interactive-clap-derive-v0.2.9) - 2024-03-25
 
 ### Added
