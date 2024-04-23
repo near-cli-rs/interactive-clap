@@ -231,16 +231,7 @@ impl FromStr for ColorPreference {
 }
 
 fn default_mode() -> ColorPreference {
-    match env::var("NO_COLOR") {
-        Ok(v) if v != "0" => ColorPreference::Never,
-        _ => {
-            if atty::is(atty::Stream::Stderr) {
-                ColorPreference::Always
-            } else {
-                ColorPreference::Never
-            }
-        }
-    }
+    ColorPreference::Never
 }
 
 impl ColorPreference {
@@ -249,16 +240,6 @@ impl ColorPreference {
             ColorPreference::Auto => "auto",
             ColorPreference::Always => "always",
             ColorPreference::Never => "never",
-        }
-    }
-
-    pub fn apply(&self) {
-        match self {
-            ColorPreference::Auto => {
-                default_mode().apply();
-            }
-            ColorPreference::Always => colored::control::set_override(true),
-            ColorPreference::Never => colored::control::set_override(false),
         }
     }
 }
