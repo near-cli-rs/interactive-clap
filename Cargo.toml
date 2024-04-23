@@ -5,7 +5,7 @@ members = [
 
 [package]
 name = "interactive-clap"
-version = "0.2.10"
+version = "0.2.11"
 authors = ["FroVolod <frol_off@meta.ua>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
