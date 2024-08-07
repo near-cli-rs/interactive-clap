@@ -174,14 +174,21 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 .unwrap_or(quote!());
 
             let fn_try_parse_from = if cfg!(feature = "try-parse-from") {
-                Some(quote! {
+                quote! {
                     pub fn try_parse_from(s: &str) -> Result<#cli_name, clap::Error> {
                         <#cli_name as clap::Parser>::try_parse_from(::shell_words::split(s)
                             .map_err(|_| ::clap::Error::raw(::clap::error::ErrorKind::InvalidSubcommand, "missing closing quote"))?)
                     }
-                })
+                }
             } else {
-                None
+                quote! {
+                    #[deprecated(
+                        note = "This method does not handle quoted arguments correctly. Add `try-parse-from` feature to `interactive-clap-derive` and add `shell-words` dependency to enable the correct implementation."
+                    )]
+                    pub fn try_parse_from(s: &str) -> Result<#cli_name, clap::Error> {
+                        <#cli_name as clap::Parser>::try_parse_from(s.split(' '))
+                    }
+                }
             };
 
             quote! {
@@ -314,14 +321,21 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 self::methods::from_cli_for_enum::from_cli_for_enum(ast, variants);
 
             let fn_try_parse_from = if cfg!(feature = "try-parse-from") {
-                Some(quote! {
+                quote! {
                     pub fn try_parse_from(s: &str) -> Result<#cli_name, clap::Error> {
                         <#cli_name as clap::Parser>::try_parse_from(::shell_words::split(s)
                             .map_err(|_| ::clap::Error::raw(::clap::error::ErrorKind::InvalidSubcommand, "missing closing quote"))?)
                     }
-                })
+                }
             } else {
-                None
+                quote! {
+                    #[deprecated(
+                        note = "This method does not handle quoted arguments correctly. Add `try-parse-from` feature to `interactive-clap-derive` and add `shell-words` dependency to enable the correct implementation."
+                    )]
+                    pub fn try_parse_from(s: &str) -> Result<#cli_name, clap::Error> {
+                        <#cli_name as clap::Parser>::try_parse_from(s.split(' '))
+                    }
+                }
             };
 
             quote! {
