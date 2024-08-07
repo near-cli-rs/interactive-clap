@@ -56,7 +56,13 @@ impl Args {
         <CliArgs as clap::Parser>::parse()
     }
     pub fn try_parse_from(s: &str) -> Result<CliArgs, clap::Error> {
-        <CliArgs as clap::Parser>::try_parse_from(s.split(" "))
+        <CliArgs as clap::Parser>::try_parse_from(
+            ::shell_words::split(s)
+                .map_err(|_| ::clap::Error::raw(
+                    ::clap::error::ErrorKind::InvalidSubcommand,
+                    "missing closing quote",
+                ))?,
+        )
     }
 }
 impl From<Args> for CliArgs {
