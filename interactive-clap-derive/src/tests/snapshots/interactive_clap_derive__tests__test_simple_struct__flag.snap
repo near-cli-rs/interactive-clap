@@ -30,7 +30,7 @@ impl interactive_clap::FromCli for Args {
     where
         Self: Sized + interactive_clap::ToCli,
     {
-        let mut clap_variant = optional_clap_variant.unwrap_or_default();
+        let mut clap_variant = optional_clap_variant.clone().unwrap_or_default();
         let offline = clap_variant.offline.clone();
         let new_context_scope = InteractiveClapContextScopeForArgs {
             offline: offline.into(),
@@ -49,11 +49,14 @@ impl Args {
             Err(err) => Err(err.into()),
         }
     }
-    fn try_parse() -> Result<CliArgs, clap::Error> {
+    pub fn try_parse() -> Result<CliArgs, clap::Error> {
         <CliArgs as clap::Parser>::try_parse()
     }
-    fn parse() -> CliArgs {
+    pub fn parse() -> CliArgs {
         <CliArgs as clap::Parser>::parse()
+    }
+    pub fn try_parse_from(s: &str) -> Result<CliArgs, clap::Error> {
+        <CliArgs as clap::Parser>::try_parse_from(s.split(" "))
     }
 }
 impl From<Args> for CliArgs {
@@ -63,4 +66,3 @@ impl From<Args> for CliArgs {
         }
     }
 }
-
