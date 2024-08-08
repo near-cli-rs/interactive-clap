@@ -173,24 +173,6 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 })
                 .unwrap_or(quote!());
 
-            let fn_try_parse_from = if cfg!(feature = "try-parse-from") {
-                quote! {
-                    pub fn try_parse_from(s: &str) -> Result<#cli_name, clap::Error> {
-                        <#cli_name as clap::Parser>::try_parse_from(::shell_words::split(s)
-                            .map_err(|_| ::clap::Error::raw(::clap::error::ErrorKind::InvalidSubcommand, "missing closing quote"))?)
-                    }
-                }
-            } else {
-                quote! {
-                    #[deprecated(
-                        note = "This method does not handle quoted arguments correctly. Add `try-parse-from` feature to `interactive-clap-derive` and add `shell-words` dependency to enable the correct implementation."
-                    )]
-                    pub fn try_parse_from(s: &str) -> Result<#cli_name, clap::Error> {
-                        <#cli_name as clap::Parser>::try_parse_from(s.split(' '))
-                    }
-                }
-            };
-
             quote! {
                 #[derive(Debug, Default, Clone, clap::Parser, interactive_clap::ToCliArgs)]
                 #[clap(author, version, about, long_about = None)]
@@ -217,7 +199,13 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                         <#cli_name as clap::Parser>::parse()
                     }
 
-                    #fn_try_parse_from
+                    pub fn try_parse_from<I, T>(itr: I) -> Result<#cli_name, clap::Error>
+                    where
+                        I: ::std::iter::IntoIterator<Item = T>,
+                        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
+                    {
+                        <#cli_name as clap::Parser>::try_parse_from(itr)
+                    }
                 }
 
                 impl From<#name> for #cli_name {
@@ -320,24 +308,6 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
             let fn_from_cli_for_enum =
                 self::methods::from_cli_for_enum::from_cli_for_enum(ast, variants);
 
-            let fn_try_parse_from = if cfg!(feature = "try-parse-from") {
-                quote! {
-                    pub fn try_parse_from(s: &str) -> Result<#cli_name, clap::Error> {
-                        <#cli_name as clap::Parser>::try_parse_from(::shell_words::split(s)
-                            .map_err(|_| ::clap::Error::raw(::clap::error::ErrorKind::InvalidSubcommand, "missing closing quote"))?)
-                    }
-                }
-            } else {
-                quote! {
-                    #[deprecated(
-                        note = "This method does not handle quoted arguments correctly. Add `try-parse-from` feature to `interactive-clap-derive` and add `shell-words` dependency to enable the correct implementation."
-                    )]
-                    pub fn try_parse_from(s: &str) -> Result<#cli_name, clap::Error> {
-                        <#cli_name as clap::Parser>::try_parse_from(s.split(' '))
-                    }
-                }
-            };
-
             quote! {
                 #[derive(Debug, Clone, clap::Parser, interactive_clap::ToCliArgs)]
                 pub enum #cli_name {
@@ -371,7 +341,13 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                         <#cli_name as clap::Parser>::parse()
                     }
 
-                    #fn_try_parse_from
+                    pub fn try_parse_from<I, T>(itr: I) -> Result<#cli_name, clap::Error>
+                    where
+                        I: ::std::iter::IntoIterator<Item = T>,
+                        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
+                    {
+                        <#cli_name as clap::Parser>::try_parse_from(itr)
+                    }
                 }
             }
         }

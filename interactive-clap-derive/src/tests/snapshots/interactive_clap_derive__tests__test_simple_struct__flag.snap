@@ -55,14 +55,12 @@ impl Args {
     pub fn parse() -> CliArgs {
         <CliArgs as clap::Parser>::parse()
     }
-    pub fn try_parse_from(s: &str) -> Result<CliArgs, clap::Error> {
-        <CliArgs as clap::Parser>::try_parse_from(
-            ::shell_words::split(s)
-                .map_err(|_| ::clap::Error::raw(
-                    ::clap::error::ErrorKind::InvalidSubcommand,
-                    "missing closing quote",
-                ))?,
-        )
+    pub fn try_parse_from<I, T>(itr: I) -> Result<CliArgs, clap::Error>
+    where
+        I: ::std::iter::IntoIterator<Item = T>,
+        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
+    {
+        <CliArgs as clap::Parser>::try_parse_from(itr)
     }
 }
 impl From<Args> for CliArgs {

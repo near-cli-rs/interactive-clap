@@ -22,6 +22,3 @@ syn = "1"
 prettyplease = "0.1"
 insta = "1"
 syn = { version = "1", features = ["full"] }
-
-[features]
-try-parse-from = []
