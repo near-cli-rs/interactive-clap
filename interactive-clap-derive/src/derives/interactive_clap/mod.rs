@@ -199,8 +199,12 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                         <#cli_name as clap::Parser>::parse()
                     }
 
-                    pub fn try_parse_from(s: &str) -> Result<#cli_name, clap::Error> {
-                        <#cli_name as clap::Parser>::try_parse_from(s.split(" "))
+                    pub fn try_parse_from<I, T>(itr: I) -> Result<#cli_name, clap::Error>
+                    where
+                        I: ::std::iter::IntoIterator<Item = T>,
+                        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
+                    {
+                        <#cli_name as clap::Parser>::try_parse_from(itr)
                     }
                 }
 
@@ -337,8 +341,12 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                         <#cli_name as clap::Parser>::parse()
                     }
 
-                    pub fn try_parse_from(s: &str) -> Result<#cli_name, clap::Error> {
-                        <#cli_name as clap::Parser>::try_parse_from(s.split(" "))
+                    pub fn try_parse_from<I, T>(itr: I) -> Result<#cli_name, clap::Error>
+                    where
+                        I: ::std::iter::IntoIterator<Item = T>,
+                        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
+                    {
+                        <#cli_name as clap::Parser>::try_parse_from(itr)
                     }
                 }
             }

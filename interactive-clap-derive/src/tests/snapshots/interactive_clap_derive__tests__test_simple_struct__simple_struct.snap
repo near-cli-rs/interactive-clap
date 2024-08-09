@@ -33,7 +33,7 @@ impl interactive_clap::FromCli for Args {
     where
         Self: Sized + interactive_clap::ToCli,
     {
-        let mut clap_variant = optional_clap_variant.unwrap_or_default();
+        let mut clap_variant = optional_clap_variant.clone().unwrap_or_default();
         if clap_variant.age.is_none() {
             clap_variant
                 .age = match Self::input_age(&context) {
@@ -112,11 +112,18 @@ impl Args {
             Err(err) => Err(err.into()),
         }
     }
-    fn try_parse() -> Result<CliArgs, clap::Error> {
+    pub fn try_parse() -> Result<CliArgs, clap::Error> {
         <CliArgs as clap::Parser>::try_parse()
     }
-    fn parse() -> CliArgs {
+    pub fn parse() -> CliArgs {
         <CliArgs as clap::Parser>::parse()
+    }
+    pub fn try_parse_from<I, T>(itr: I) -> Result<CliArgs, clap::Error>
+    where
+        I: ::std::iter::IntoIterator<Item = T>,
+        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
+    {
+        <CliArgs as clap::Parser>::try_parse_from(itr)
     }
 }
 impl From<Args> for CliArgs {
@@ -128,4 +135,3 @@ impl From<Args> for CliArgs {
         }
     }
 }
-
