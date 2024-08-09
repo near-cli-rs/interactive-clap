@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0](https://github.com/near-cli-rs/interactive-clap/compare/interactive-clap-derive-v0.2.10...interactive-clap-derive-v0.3.0) - 2024-08-09
+
+### Fixed
+- [**breaking**] Proxy `try_parse_from` to Clap's `try_parse_from` as is, instead of naive parsing of `&str` ([#21](https://github.com/near-cli-rs/interactive-clap/pull/21))
+
 ## [0.2.10](https://github.com/near-cli-rs/interactive-clap/compare/interactive-clap-derive-v0.2.9...interactive-clap-derive-v0.2.10) - 2024-04-21
 
 ### Added
