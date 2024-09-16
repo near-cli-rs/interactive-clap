@@ -37,3 +37,6 @@ pub fn cli_field_type(ty: &syn::Type) -> proc_macro2::TokenStream {
         _ => abort_call_site!("Only option `Type::Path` is needed"),
     }
 }
+
+// TODO: add helper method to check if type starts with Vec
+

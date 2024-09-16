@@ -63,6 +63,7 @@ impl interactive_clap::FromCli for Contract {
                     out_dir: cli_build_command_args.out_dir.clone(),
                     manifest_path: cli_build_command_args.manifest_path.clone(),
                     color: cli_build_command_args.color.clone(),
+                    env: cli_build_command_args.env.clone(),
                 }
             } else {
                 BuildCommand::default()
@@ -150,6 +151,11 @@ pub struct BuildCommand {
     #[interactive_clap(value_enum)]
     #[interactive_clap(skip_interactive_input)]
     pub color: Option<ColorPreference>,
+
+    // `vec_multiple_opt` implies `skip_interactive_input`
+    #[interactive_clap(long)]
+    #[interactive_clap(vec_multiple_opt)]
+    pub env: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -171,6 +177,7 @@ impl BuildCommandlContext {
             out_dir: scope.out_dir.clone(),
             manifest_path: scope.manifest_path.clone(),
             color: scope.color.clone(),
+            env: scope.env.clone(),
         };
         Ok(Self { build_command_args })
     }
@@ -193,7 +200,7 @@ pub enum Mode {
     Offline,
 }
 
-use std::{env, str::FromStr};
+use std::str::FromStr;
 
 #[derive(Debug, EnumDiscriminants, Clone, clap::ValueEnum)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]

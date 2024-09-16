@@ -7,6 +7,12 @@ use syn;
 
 mod methods;
 
+/// used for specifying multiple values with `Vec<..>` type,
+/// by repeating corresponding flag `--flag-name` for each value
+///
+/// implies `skip_interactive_input`, as it's not intended for interactive input
+pub const VEC_MUTLIPLE_OPT: &str = "vec_multiple_opt";
+
 pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let cli_name_string = format!("Cli{}", &ast.ident);
@@ -80,6 +86,14 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                                             ident_skip_field_vec.push(ident_field.clone());
                                             cli_field = quote!()
                                         };
+                                        if group.stream().to_string() == VEC_MUTLIPLE_OPT {
+                                            // TODO: add validation, that field's type is Vec
+                                            // type goes into output unchanged, otherwise it
+                                            // prevents clap deriving correctly its `remove_many` thing  
+                                            cli_field = quote! {
+                                                pub #ident_field: #ty
+                                            };
+                                        }
                                     }
                                     _ => {
                                         abort_call_site!("Only option `TokenTree::Group` is needed")
@@ -410,6 +424,23 @@ fn for_cli_field(
         quote!()
     } else {
         let ty = &field.ty;
+        for attr in &field.attrs {
+            if attr.path.is_ident("interactive_clap") {
+                for attr_token in attr.tokens.clone() {
+                    match attr_token {
+                        proc_macro2::TokenTree::Group(group) => {
+                            if group.stream().to_string() == VEC_MUTLIPLE_OPT {
+                                return quote! {
+                                    #ident_field: args.#ident_field.into()
+                                };
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+
         match &ty {
             syn::Type::Path(type_path) => match type_path.path.segments.first() {
                 Some(path_segment) => {

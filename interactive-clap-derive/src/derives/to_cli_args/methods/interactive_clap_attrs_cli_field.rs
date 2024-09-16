@@ -66,6 +66,7 @@ impl InteractiveClapAttrsCliField {
                                                     &ident_field_to_kebab_case_string,
                                                     Span::call_site(),
                                                 );
+
                                                 if field.ty.to_token_stream().to_string() == "bool"
                                                 {
                                                     unnamed_args = quote! {
@@ -80,6 +81,24 @@ impl InteractiveClapAttrsCliField {
                                                             args.push_front(std::concat!("--", #ident_field_to_kebab_case).to_string());
                                                         }
                                                     };
+                                                    match &field.ty {
+                                                        syn::Type::Path(type_path) => {
+                                                            match type_path.path.segments.first() {
+                                                                Some(path_segment) => {
+                                                                    if path_segment.ident == "Vec" {
+                                                                        unnamed_args = quote! {
+                                                                            for arg in &self.#ident_field {
+                                                                                args.push_front(arg.to_string());
+                                                                                args.push_front(std::concat!("--", #ident_field_to_kebab_case).to_string());
+                                                                            }
+                                                                        };
+                                                                    }
+                                                                },
+                                                                _ => {}
+                                                            }
+                                                        },
+                                                        _ => {},
+                                                    }
                                                 }
                                             }
                                         }
