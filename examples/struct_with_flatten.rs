@@ -252,7 +252,7 @@ fn main() -> color_eyre::Result<()> {
             <Contract as interactive_clap::FromCli>::from_cli(Some(cli_contract), context);
         match contract {
             ResultFromCli::Ok(cli_contract) | ResultFromCli::Cancel(Some(cli_contract)) => {
-                println!("contract: {cli_contract:?}");
+                println!("contract: {cli_contract:#?}");
                 println!(
                     "Your console command:  {}",
                     shell_words::join(&cli_contract.to_cli_args())
