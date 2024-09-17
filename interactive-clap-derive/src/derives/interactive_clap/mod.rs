@@ -1,17 +1,14 @@
 extern crate proc_macro;
 
+use methods::cli_field_type;
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort_call_site;
 use quote::{quote, ToTokens};
 use syn;
 
-mod methods;
+use crate::VEC_MUTLIPLE_OPT;
 
-/// used for specifying multiple values with `Vec<..>` type,
-/// by repeating corresponding flag `--flag-name` for each value
-///
-/// implies `skip_interactive_input`, as it's not intended for interactive input
-pub const VEC_MUTLIPLE_OPT: &str = "vec_multiple_opt";
+pub(crate) mod methods;
 
 pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
@@ -87,7 +84,9 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                                             cli_field = quote!()
                                         };
                                         if group.stream().to_string() == VEC_MUTLIPLE_OPT {
-                                            // TODO: add validation, that field's type is Vec
+                                            if !cli_field_type::starts_with_vec(ty) {
+                                                abort_call_site!("`{}` attribute is only supposed to be used with `Vec` types", VEC_MUTLIPLE_OPT)
+                                            }
                                             // type goes into output unchanged, otherwise it
                                             // prevents clap deriving correctly its `remove_many` thing  
                                             cli_field = quote! {

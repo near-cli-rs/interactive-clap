@@ -38,5 +38,13 @@ pub fn cli_field_type(ty: &syn::Type) -> proc_macro2::TokenStream {
     }
 }
 
-// TODO: add helper method to check if type starts with Vec
-
+pub fn starts_with_vec(ty: &syn::Type) -> bool {
+    if let syn::Type::Path(type_path) = ty {
+        if let Some(path_segment) = type_path.path.segments.first() {
+            if path_segment.ident == "Vec" {
+                return true;
+            }
+        }
+    }
+    false
+}
