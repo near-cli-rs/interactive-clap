@@ -2,7 +2,7 @@ extern crate proc_macro;
 
 use syn;
 
-use crate::VEC_MUTLIPLE_OPT;
+use crate::LONG_VEC_MUTLIPLE_OPT;
 
 
 pub fn is_skip_interactive_input(field: &syn::Field) -> bool {
@@ -15,7 +15,7 @@ pub fn is_skip_interactive_input(field: &syn::Field) -> bool {
             proc_macro2::TokenTree::Group(group) => {
                 let group_string = group.stream().to_string();
                 group_string.contains("skip_interactive_input")
-                    || group_string.contains(VEC_MUTLIPLE_OPT)
+                    || group_string.contains(LONG_VEC_MUTLIPLE_OPT)
             }
             _ => false,
         })

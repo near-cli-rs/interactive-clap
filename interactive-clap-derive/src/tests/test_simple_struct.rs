@@ -49,8 +49,7 @@ fn test_flag() {
 fn test_vec_multiple_opt() {
     let input = syn::parse_quote! {
         struct Args {
-            #[interactive_clap(long)]
-            #[interactive_clap(vec_multiple_opt)]
+            #[interactive_clap(long_vec_multiple_opt)]
             pub env: Vec<String>,
         }
     };
@@ -74,12 +73,13 @@ fn test_vec_multiple_opt_to_cli_args() {
 }
 
 #[test]
+// testing correct panic msg isn't really very compatible with 
+// `proc-macro-error` crate
 #[should_panic]
 fn test_vec_multiple_opt_err() {
     let input = syn::parse_quote! {
         struct Args {
-            #[interactive_clap(long)]
-            #[interactive_clap(vec_multiple_opt)]
+            #[interactive_clap(long_vec_multiple_opt)]
             pub env: String,
         }
     };

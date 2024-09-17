@@ -6,7 +6,7 @@ use proc_macro_error::abort_call_site;
 use quote::{quote, ToTokens};
 use syn;
 
-use crate::VEC_MUTLIPLE_OPT;
+use crate::LONG_VEC_MUTLIPLE_OPT;
 
 pub(crate) mod methods;
 
@@ -38,13 +38,16 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                             for attr_token in attr.tokens.clone() {
                                 match attr_token {
                                     proc_macro2::TokenTree::Group(group) => {
-                                        if group.stream().to_string().contains("subcommand")
-                                            || group.stream().to_string().contains("value_enum")
-                                            || group.stream().to_string().contains("long")
-                                            || (group.stream().to_string() == *"skip")
-                                            || (group.stream().to_string() == *"flatten")
+                                        let group_string = group.stream().to_string();
+                                        if group_string.contains("subcommand")
+                                            || group_string.contains("value_enum")
+                                            || group_string.contains("long")
+                                            || (group_string == *"skip")
+                                            || (group_string == *"flatten")
                                         {
-                                            clap_attr_vec.push(group.stream())
+                                            if group_string != LONG_VEC_MUTLIPLE_OPT {
+                                                clap_attr_vec.push(group.stream())
+                                            }
                                         } else if group.stream().to_string() == *"named_arg" {
                                             let ident_subcommand =
                                                 syn::Ident::new("subcommand", Span::call_site());
@@ -83,10 +86,12 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                                             ident_skip_field_vec.push(ident_field.clone());
                                             cli_field = quote!()
                                         };
-                                        if group.stream().to_string() == VEC_MUTLIPLE_OPT {
+                                        if group.stream().to_string() == LONG_VEC_MUTLIPLE_OPT {
                                             if !cli_field_type::starts_with_vec(ty) {
-                                                abort_call_site!("`{}` attribute is only supposed to be used with `Vec` types", VEC_MUTLIPLE_OPT)
+                                                abort_call_site!("`{}` attribute is only supposed to be used with `Vec` types", LONG_VEC_MUTLIPLE_OPT)
                                             }
+                                            // implies `#[interactive_clap(long)]`
+                                            clap_attr_vec.push(quote! { long });
                                             // type goes into output unchanged, otherwise it
                                             // prevents clap deriving correctly its `remove_many` thing  
                                             cli_field = quote! {
@@ -429,7 +434,7 @@ fn for_cli_field(
                 |attr_token|
                 matches!(
                     attr_token, 
-                    proc_macro2::TokenTree::Group(group) if group.stream().to_string() == VEC_MUTLIPLE_OPT
+                    proc_macro2::TokenTree::Group(group) if group.stream().to_string() == LONG_VEC_MUTLIPLE_OPT
                 )
             )
         ) {

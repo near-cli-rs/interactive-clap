@@ -152,9 +152,9 @@ pub struct BuildCommand {
     #[interactive_clap(skip_interactive_input)]
     pub color: Option<ColorPreference>,
 
-    // `vec_multiple_opt` implies `skip_interactive_input`
-    #[interactive_clap(long)]
-    #[interactive_clap(vec_multiple_opt)]
+    // `long_vec_multiple_opt` implies `skip_interactive_input`
+    // `long_vec_multiple_opt` implies `long`
+    #[interactive_clap(long_vec_multiple_opt)]
     pub env: Vec<String>,
 }
 

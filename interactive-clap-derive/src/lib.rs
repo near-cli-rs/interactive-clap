@@ -8,11 +8,13 @@ mod helpers;
 #[cfg(test)]
 mod tests;
 
-/// used for specifying multiple values with `Vec<..>` type,
-/// by repeating corresponding flag `--flag-name` for each value
+/// `#[interactive_clap(...)]` attribute used for specifying multiple values with `Vec<..>` type,
+/// by repeating corresponding flag `--field-name` (kebab case) for each value
+///
+/// implies `#[interactive_clap(long)]`
 ///
 /// implies `#[interactive_clap(skip_interactive_input)]`, as it's not intended for interactive input
-pub(crate) const VEC_MUTLIPLE_OPT: &str = "vec_multiple_opt";
+pub(crate) const LONG_VEC_MUTLIPLE_OPT: &str = "long_vec_multiple_opt";
 
 #[proc_macro_derive(InteractiveClap, attributes(interactive_clap))]
 #[proc_macro_error]
