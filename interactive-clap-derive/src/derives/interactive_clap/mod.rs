@@ -424,21 +424,19 @@ fn for_cli_field(
         quote!()
     } else {
         let ty = &field.ty;
-        for attr in &field.attrs {
-            if attr.path.is_ident("interactive_clap") {
-                for attr_token in attr.tokens.clone() {
-                    match attr_token {
-                        proc_macro2::TokenTree::Group(group) => {
-                            if group.stream().to_string() == VEC_MUTLIPLE_OPT {
-                                return quote! {
-                                    #ident_field: args.#ident_field.into()
-                                };
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-            }
+        if field.attrs.iter().any(|attr| 
+            attr.path.is_ident("interactive_clap") &&
+            attr.tokens.clone().into_iter().any(
+                |attr_token|
+                matches!(
+                    attr_token, 
+                    proc_macro2::TokenTree::Group(group) if group.stream().to_string() == VEC_MUTLIPLE_OPT
+                )
+            )
+        ) {
+            return quote! {
+                #ident_field: args.#ident_field.into()
+            };
         }
 
         match &ty {
