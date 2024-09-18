@@ -85,7 +85,7 @@ impl InteractiveClapAttrsCliField {
                                                     };
                                                     if cli_field_type::starts_with_vec(&field.ty) {
                                                         unnamed_args = quote! {
-                                                            for arg in &self.#ident_field {
+                                                            for arg in self.#ident_field.iter().rev() {
                                                                 args.push_front(arg.to_string());
                                                                 args.push_front(std::concat!("--", #ident_field_to_kebab_case).to_string());
                                                             }
