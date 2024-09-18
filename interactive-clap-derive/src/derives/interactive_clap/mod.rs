@@ -1,11 +1,14 @@
 extern crate proc_macro;
 
+use methods::cli_field_type;
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort_call_site;
 use quote::{quote, ToTokens};
 use syn;
 
-mod methods;
+use crate::LONG_VEC_MUTLIPLE_OPT;
+
+pub(crate) mod methods;
 
 pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
@@ -35,13 +38,16 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                             for attr_token in attr.tokens.clone() {
                                 match attr_token {
                                     proc_macro2::TokenTree::Group(group) => {
-                                        if group.stream().to_string().contains("subcommand")
-                                            || group.stream().to_string().contains("value_enum")
-                                            || group.stream().to_string().contains("long")
-                                            || (group.stream().to_string() == *"skip")
-                                            || (group.stream().to_string() == *"flatten")
+                                        let group_string = group.stream().to_string();
+                                        if group_string.contains("subcommand")
+                                            || group_string.contains("value_enum")
+                                            || group_string.contains("long")
+                                            || (group_string == *"skip")
+                                            || (group_string == *"flatten")
                                         {
-                                            clap_attr_vec.push(group.stream())
+                                            if group_string != LONG_VEC_MUTLIPLE_OPT {
+                                                clap_attr_vec.push(group.stream())
+                                            }
                                         } else if group.stream().to_string() == *"named_arg" {
                                             let ident_subcommand =
                                                 syn::Ident::new("subcommand", Span::call_site());
@@ -80,6 +86,18 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                                             ident_skip_field_vec.push(ident_field.clone());
                                             cli_field = quote!()
                                         };
+                                        if group.stream().to_string() == LONG_VEC_MUTLIPLE_OPT {
+                                            if !cli_field_type::starts_with_vec(ty) {
+                                                abort_call_site!("`{}` attribute is only supposed to be used with `Vec` types", LONG_VEC_MUTLIPLE_OPT)
+                                            }
+                                            // implies `#[interactive_clap(long)]`
+                                            clap_attr_vec.push(quote! { long });
+                                            // type goes into output unchanged, otherwise it
+                                            // prevents clap deriving correctly its `remove_many` thing  
+                                            cli_field = quote! {
+                                                pub #ident_field: #ty
+                                            };
+                                        }
                                     }
                                     _ => {
                                         abort_call_site!("Only option `TokenTree::Group` is needed")
@@ -410,6 +428,21 @@ fn for_cli_field(
         quote!()
     } else {
         let ty = &field.ty;
+        if field.attrs.iter().any(|attr| 
+            attr.path.is_ident("interactive_clap") &&
+            attr.tokens.clone().into_iter().any(
+                |attr_token|
+                matches!(
+                    attr_token, 
+                    proc_macro2::TokenTree::Group(group) if group.stream().to_string() == LONG_VEC_MUTLIPLE_OPT
+                )
+            )
+        ) {
+            return quote! {
+                #ident_field: args.#ident_field.into()
+            };
+        }
+
         match &ty {
             syn::Type::Path(type_path) => match type_path.path.segments.first() {
                 Some(path_segment) => {

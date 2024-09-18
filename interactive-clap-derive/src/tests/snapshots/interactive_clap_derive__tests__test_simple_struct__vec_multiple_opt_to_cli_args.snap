@@ -1,0 +1,14 @@
+---
+source: interactive-clap-derive/src/tests/test_simple_struct.rs
+expression: pretty_codegen(&to_cli_args_codegen)
+---
+impl interactive_clap::ToCliArgs for CliArgs {
+    fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        for arg in self.env.iter().rev() {
+            args.push_front(arg.to_string());
+            args.push_front(std::concat!("--", "env").to_string());
+        }
+        args
+    }
+}
