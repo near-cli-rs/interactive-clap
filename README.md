@@ -10,4 +10,8 @@
 
 See examples in the [`examples/`](https://github.com/near-cli-rs/interactive-clap/tree/master/examples) folder.
 
+<p>
+  <img src=".github/media/simple_struct_demo.png" alt="Usage example showing a simple struct annotated with interactive-clap">
+</p>
+
 See it in action in [`near-cli-rs`](https://near.cli.rs) and [`bos-cli-rs`](https://bos.cli.rs).
