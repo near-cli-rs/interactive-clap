@@ -33,6 +33,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                     };
                     let mut clap_attr_vec: Vec<proc_macro2::TokenStream> = Vec::new();
                     let mut cfg_attr_vec: Vec<proc_macro2::TokenStream> = Vec::new();
+                    // let mut doc_attr_vec: Vec<proc_macro2::TokenStream> = Vec::new();
                     for attr in &field.attrs {
                         if attr.path.is_ident("interactive_clap") || attr.path.is_ident("cfg") {
                             for attr_token in attr.tokens.clone() {
@@ -105,6 +106,9 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                                 }
                             }
                         }
+                        // if attr.path.is_ident("doc") {
+                        //     doc_attr_vec.push(attr.into_token_stream())
+                        // }
                     }
                     if cli_field.is_empty() {
                         return cli_field;
@@ -114,12 +118,14 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                         let clap_attrs = clap_attr_vec.iter();
                         quote! {
                             #(#cfg_attrs)*
+                            // #(#doc_attr_vec)*
                             #[clap(#(#clap_attrs, )*)]
                             #cli_field
                         }
                     } else {
                         quote! {
                             #(#cfg_attrs)*
+                            // #(#doc_attr_vec)*
                             #cli_field
                         }
                     }

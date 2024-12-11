@@ -11,9 +11,13 @@ use interactive_clap::{ResultFromCli, ToCliArgs};
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 struct Account {
     /// Change SocialDb prefix
+    /// 
+    /// It's a paraghraph, describing, this argument usage in more detail
+    /// than just the headline
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
     social_db_folder: Option<String>,
+    /// Sender account
     #[interactive_clap(subargs)]
     account: Sender,
 }
