@@ -11,7 +11,7 @@ use interactive_clap::{ResultFromCli, ToCliArgs};
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 struct Account {
     /// Change SocialDb prefix
-    /// 
+    ///
     /// It's a paraghraph, describing, this argument usage in more detail
     /// than just the headline
     #[interactive_clap(long)]

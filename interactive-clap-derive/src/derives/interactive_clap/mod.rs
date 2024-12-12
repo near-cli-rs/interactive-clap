@@ -35,8 +35,10 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                     let mut cfg_attr_vec: Vec<proc_macro2::TokenStream> = Vec::new();
                     let mut doc_attr_vec: Vec<proc_macro2::TokenStream> = Vec::new();
                     for attr in &field.attrs {
+                        dbg_cond!(attr.path.to_token_stream().into_iter().collect::<Vec<_>>());
                         if attr.path.is_ident("interactive_clap") || attr.path.is_ident("cfg") {
-                            for attr_token in attr.tokens.clone() {
+                            for (_index,  attr_token) in attr.tokens.clone().into_iter().enumerate() {
+                                dbg_cond!(_index, &attr_token);
                                 match attr_token {
                                     proc_macro2::TokenTree::Group(group) => {
                                         let group_string = group.stream().to_string();
@@ -434,12 +436,12 @@ fn for_cli_field(
         quote!()
     } else {
         let ty = &field.ty;
-        if field.attrs.iter().any(|attr| 
+        if field.attrs.iter().any(|attr|
             attr.path.is_ident("interactive_clap") &&
             attr.tokens.clone().into_iter().any(
                 |attr_token|
                 matches!(
-                    attr_token, 
+                    attr_token,
                     proc_macro2::TokenTree::Group(group) if group.stream().to_string() == LONG_VEC_MUTLIPLE_OPT
                 )
             )
