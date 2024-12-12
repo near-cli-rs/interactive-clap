@@ -5,6 +5,7 @@ expression: pretty_codegen(&interactive_clap_codegen)
 #[derive(Debug, Default, Clone, clap::Parser, interactive_clap::ToCliArgs)]
 #[clap(author, version, about, long_about = None)]
 pub struct CliArgs {
+    /// Offline mode
     #[clap(long)]
     pub offline: bool,
 }

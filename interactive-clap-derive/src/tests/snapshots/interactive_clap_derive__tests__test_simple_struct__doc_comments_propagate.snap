@@ -5,7 +5,15 @@ expression: pretty_codegen(&interactive_clap_codegen)
 #[derive(Debug, Default, Clone, clap::Parser, interactive_clap::ToCliArgs)]
 #[clap(author, version, about, long_about = None)]
 pub struct CliArgs {
+    /// short first field description
+    ///
+    /// a longer paragraph, describing the usage and stuff with first field's
+    /// awarenes of its possible applications
     pub first_field: Option<<u64 as interactive_clap::ToCli>::CliVariant>,
+    /// short second field description
+    ///
+    /// a longer paragraph, describing the usage and stuff with second field's
+    /// awareness of its possible applications
     pub second_field: Option<<String as interactive_clap::ToCli>::CliVariant>,
 }
 impl interactive_clap::ToCli for Args {
