@@ -6,7 +6,7 @@ use proc_macro_error::abort_call_site;
 use quote::{quote, ToTokens};
 use syn;
 
-use crate::LONG_VEC_MUTLIPLE_OPT;
+use crate::{LONG_VEC_MUTLIPLE_OPT, VERBATIM_DOC_COMMENT};
 
 pub(crate) mod methods;
 
@@ -47,6 +47,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                                             || group_string.contains("long")
                                             || (group_string == *"skip")
                                             || (group_string == *"flatten")
+                                            || (group_string == VERBATIM_DOC_COMMENT)
                                         {
                                             if group_string != LONG_VEC_MUTLIPLE_OPT {
                                                 clap_attr_vec.push(group.stream())

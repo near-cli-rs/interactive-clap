@@ -16,6 +16,7 @@ struct Account {
     /// than just the headline
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
+    #[interactive_clap(verbatim_doc_comment)]
     social_db_folder: Option<String>,
     /// Sender account
     #[interactive_clap(subargs)]
