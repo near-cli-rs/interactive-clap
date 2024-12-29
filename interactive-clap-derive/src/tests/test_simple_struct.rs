@@ -56,7 +56,6 @@ fn test_vec_multiple_opt() {
 
     let interactive_clap_codegen = crate::derives::interactive_clap::impl_interactive_clap(&input);
     insta::assert_snapshot!(pretty_codegen(&interactive_clap_codegen));
-
 }
 
 #[test]
@@ -73,7 +72,7 @@ fn test_vec_multiple_opt_to_cli_args() {
 }
 
 #[test]
-// testing correct panic msg isn't really very compatible with 
+// testing correct panic msg isn't really very compatible with
 // `proc-macro-error` crate
 #[should_panic]
 fn test_vec_multiple_opt_err() {
@@ -86,5 +85,4 @@ fn test_vec_multiple_opt_err() {
 
     let interactive_clap_codegen = crate::derives::interactive_clap::impl_interactive_clap(&input);
     insta::assert_snapshot!(pretty_codegen(&interactive_clap_codegen));
-
 }

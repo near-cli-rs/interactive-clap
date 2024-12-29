@@ -428,12 +428,12 @@ fn for_cli_field(
         quote!()
     } else {
         let ty = &field.ty;
-        if field.attrs.iter().any(|attr| 
+        if field.attrs.iter().any(|attr|
             attr.path.is_ident("interactive_clap") &&
             attr.tokens.clone().into_iter().any(
                 |attr_token|
                 matches!(
-                    attr_token, 
+                    attr_token,
                     proc_macro2::TokenTree::Group(group) if group.stream().to_string() == LONG_VEC_MUTLIPLE_OPT
                 )
             )
