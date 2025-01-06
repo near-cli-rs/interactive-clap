@@ -4,7 +4,6 @@ use syn;
 
 use crate::LONG_VEC_MUTLIPLE_OPT;
 
-
 pub fn is_skip_interactive_input(field: &syn::Field) -> bool {
     field
         .attrs
