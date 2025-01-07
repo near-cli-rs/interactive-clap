@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2](https://github.com/near-cli-rs/interactive-clap/compare/interactive-clap-v0.3.1...interactive-clap-v0.3.2) - 2025-01-07
+
+### Other
+
+- Added "cargo test" command (#33)
+- Added clippy to examples (#31)
+- Added code style check (#29)
+- add CODEOWNERS (#27)
+- Added a demo image to README (#24)
+
 ## [0.3.1](https://github.com/near-cli-rs/interactive-clap/compare/interactive-clap-v0.3.0...interactive-clap-v0.3.1) - 2024-09-18
 
 ### Added
