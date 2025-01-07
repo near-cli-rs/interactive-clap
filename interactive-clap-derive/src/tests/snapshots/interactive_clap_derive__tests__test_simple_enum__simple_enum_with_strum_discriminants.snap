@@ -69,7 +69,7 @@ impl Mode {
         use inquire::Select;
         use strum::{EnumMessage, IntoEnumIterator};
         let selected_variant = Select::new(
-                concat!().trim(),
+                concat!(r" A little beautiful comment about our choice",).trim(),
                 ModeDiscriminants::iter()
                     .map(SelectVariantOrBack::Variant)
                     .chain([SelectVariantOrBack::Back])
