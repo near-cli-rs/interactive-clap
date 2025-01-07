@@ -23,6 +23,10 @@ prettyplease = "0.1"
 insta = "1"
 syn = { version = "1", features = ["full"] }
 
+[package.metadata.docs.rs]
+# Additional `RUSTDOCFLAGS` to set (default: [])
+rustdoc-args = ["--document-private-items"]
+
 [features]
 default = []
 introspect = []

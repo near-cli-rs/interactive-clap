@@ -1,11 +1,16 @@
 //! The Interactive-clap library is an add-on for the Command Line Argument
-//! Parser (https://crates.io/crates/clap). Interactive-clap allows you to parse
+//! Parser <https://crates.io/crates/clap>. Interactive-clap allows you to parse
 //! command line options. The peculiarity of this macro is that in the absence
 //! of command line parameters, the interactive mode of entering these data by
 //! the user is activated.
 
 pub use interactive_clap_derive::{InteractiveClap, ToCliArgs};
 
+/// Associated type [`Self::CliVariant`] is defined during derive of
+/// [`macro@crate::InteractiveClap`]
+///
+/// This type has derive of [`clap::Parser`](https://docs.rs/clap/4.5.24/clap/trait.Parser.html), which allows to parse
+/// initial input on cli, which may be incomplete
 pub trait ToCli {
     type CliVariant;
 }
