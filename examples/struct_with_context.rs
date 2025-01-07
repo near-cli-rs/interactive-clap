@@ -59,9 +59,7 @@ impl From<()> for NetworkContext {
 }
 
 impl From<NetworkContext> for () {
-    fn from(_: NetworkContext) -> Self {
-        ()
-    }
+    fn from(_: NetworkContext) -> Self {}
 }
 
 #[derive(Debug)]
@@ -106,7 +104,7 @@ fn main() -> color_eyre::Result<()> {
             ResultFromCli::Ok(cli_offline_args) | ResultFromCli::Cancel(Some(cli_offline_args)) => {
                 println!(
                     "Your console command:  {}",
-                    shell_words::join(&cli_offline_args.to_cli_args())
+                    shell_words::join(cli_offline_args.to_cli_args())
                 );
                 return Ok(());
             }
@@ -121,7 +119,7 @@ fn main() -> color_eyre::Result<()> {
                 if let Some(cli_offline_args) = cli_offline_args {
                     println!(
                         "Your console command:  {}",
-                        shell_words::join(&cli_offline_args.to_cli_args())
+                        shell_words::join(cli_offline_args.to_cli_args())
                     );
                 }
                 return Err(err);
