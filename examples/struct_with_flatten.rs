@@ -8,6 +8,8 @@
 
 // Note: currently there is no automatic generation of "interactive clap::From Cli"
 
+#![allow(clippy::unit_arg, dead_code, unreachable_patterns, unused_variables)]
+
 use interactive_clap::{ResultFromCli, ToCliArgs};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -86,16 +88,13 @@ impl interactive_clap::FromCli for Contract {
             contract_account_id,
         };
 
-        let output_context =
+        let _output_context =
             match ContractContext::from_previous_context(context, &new_context_scope) {
                 Ok(new_context) => new_context,
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
 
-        match <Mode as interactive_clap::FromCli>::from_cli(
-            clap_variant.mode.take(),
-            context.into(),
-        ) {
+        match <Mode as interactive_clap::FromCli>::from_cli(clap_variant.mode.take(), context) {
             interactive_clap::ResultFromCli::Ok(cli_field) => {
                 clap_variant.mode = Some(cli_field);
             }
@@ -262,7 +261,7 @@ fn main() -> color_eyre::Result<()> {
                 println!("contract: {cli_contract:#?}");
                 println!(
                     "Your console command:  {}",
-                    shell_words::join(&cli_contract.to_cli_args())
+                    shell_words::join(cli_contract.to_cli_args())
                 );
                 return Ok(());
             }
@@ -277,7 +276,7 @@ fn main() -> color_eyre::Result<()> {
                 if let Some(cli_contract) = cli_contract {
                     println!(
                         "Your console command:  {}",
-                        shell_words::join(&cli_contract.to_cli_args())
+                        shell_words::join(cli_contract.to_cli_args())
                     );
                 }
                 return Err(err);

@@ -35,7 +35,7 @@ fn main() -> color_eyre::Result<()> {
             ResultFromCli::Ok(cli_mode) | ResultFromCli::Cancel(Some(cli_mode)) => {
                 println!(
                     "Your console command:  {}",
-                    shell_words::join(&cli_mode.to_cli_args())
+                    shell_words::join(cli_mode.to_cli_args())
                 );
                 return Ok(());
             }
@@ -48,7 +48,7 @@ fn main() -> color_eyre::Result<()> {
                 if let Some(cli_mode) = optional_cli_mode {
                     println!(
                         "Your console command:  {}",
-                        shell_words::join(&cli_mode.to_cli_args())
+                        shell_words::join(cli_mode.to_cli_args())
                     );
                 }
                 return Err(err);
