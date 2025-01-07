@@ -21,6 +21,7 @@ fn test_simple_enum() {
 #[test]
 fn test_simple_enum_with_strum_discriminants() {
     let input = syn::parse_quote! {
+        #[strum_discriminants(derive(EnumMessage, EnumIter))]
         pub enum Mode {
             /// Prepare and, optionally, submit a new transaction with online mode
             #[strum_discriminants(strum(message = "Yes, I keep it simple"))]

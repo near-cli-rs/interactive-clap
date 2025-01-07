@@ -64,7 +64,34 @@ impl Mode {
     ) -> interactive_clap::ResultFromCli<
         <Self as interactive_clap::ToCli>::CliVariant,
         <Self as interactive_clap::FromCli>::FromCliError,
-    > {}
+    > {
+        use interactive_clap::SelectVariantOrBack;
+        use inquire::Select;
+        use strum::{EnumMessage, IntoEnumIterator};
+        let selected_variant = Select::new(
+                concat!().trim(),
+                ModeDiscriminants::iter()
+                    .map(SelectVariantOrBack::Variant)
+                    .chain([SelectVariantOrBack::Back])
+                    .collect(),
+            )
+            .prompt();
+        match selected_variant {
+            Ok(SelectVariantOrBack::Variant(variant)) => {
+                let cli_args = match variant {
+                    ModeDiscriminants::Network => CliMode::Network,
+                    ModeDiscriminants::Offline => CliMode::Offline,
+                };
+                return interactive_clap::ResultFromCli::Ok(cli_args);
+            }
+            Ok(SelectVariantOrBack::Back) => return interactive_clap::ResultFromCli::Back,
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => return interactive_clap::ResultFromCli::Cancel(None),
+            Err(err) => return interactive_clap::ResultFromCli::Err(None, err.into()),
+        }
+    }
     pub fn try_parse() -> Result<CliMode, clap::Error> {
         <CliMode as clap::Parser>::try_parse()
     }
