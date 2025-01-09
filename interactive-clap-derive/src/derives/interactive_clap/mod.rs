@@ -9,19 +9,16 @@ pub(crate) mod methods;
 
 pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
-    let cli_name_string = format!("Cli{}", &ast.ident);
-    let cli_name = &syn::Ident::new(&cli_name_string, Span::call_site());
+    let cli_name = {
+        let cli_name_string = format!("Cli{}", name);
+        &syn::Ident::new(&cli_name_string, Span::call_site())
+    };
     match &ast.data {
         syn::Data::Struct(data_struct) => {
             let fields = data_struct.fields.clone();
 
-            let (cli_fields, ident_skip_field_vec) =
-                structs::cli_variant_of_to_cli_trait::fields(&fields, name);
-
-            let for_cli_fields = fields
-                .iter()
-                .map(|field| for_cli_field(field, &ident_skip_field_vec))
-                .filter(|token_stream| !token_stream.is_empty());
+            let cli_variant_of_to_cli_trait_block =
+                structs::cli_variant_of_to_cli_trait::token_stream(name, cli_name, &fields);
 
             let fn_from_cli_for_struct =
                 self::methods::from_cli_for_struct::from_cli_for_struct(ast, &fields);
@@ -83,41 +80,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                 .unwrap_or(quote!());
 
             quote! {
-                #[derive(Debug, Default, Clone, clap::Parser, interactive_clap::ToCliArgs)]
-                #[clap(author, version, about, long_about = None)]
-                pub struct #cli_name {
-                    #( #cli_fields, )*
-                }
-
-                impl interactive_clap::ToCli for #name {
-                    type CliVariant = #cli_name;
-                }
-
-                impl #name {
-                    pub fn try_parse() -> Result<#cli_name, clap::Error> {
-                        <#cli_name as clap::Parser>::try_parse()
-                    }
-
-                    pub fn parse() -> #cli_name {
-                        <#cli_name as clap::Parser>::parse()
-                    }
-
-                    pub fn try_parse_from<I, T>(itr: I) -> Result<#cli_name, clap::Error>
-                    where
-                        I: ::std::iter::IntoIterator<Item = T>,
-                        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
-                    {
-                        <#cli_name as clap::Parser>::try_parse_from(itr)
-                    }
-                }
-
-                impl From<#name> for #cli_name {
-                    fn from(args: #name) -> Self {
-                        Self {
-                            #( #for_cli_fields, )*
-                        }
-                    }
-                }
+                #cli_variant_of_to_cli_trait_block
 
                 impl #name {
                     #(#vec_fn_input_arg)*
@@ -328,14 +291,52 @@ mod structs {
         use proc_macro_error::abort_call_site;
         use quote::{quote, ToTokens};
 
-        /// this module describes derive of individual field of `#cli_name` struct
-        /// based on transformation of input field from `#name` struct
-        mod field;
-
-        pub fn fields(
-            fields: &syn::Fields,
+        /// returns the whole result `TokenStream` of derive logic of containing module
+        pub fn token_stream(
             name: &syn::Ident,
-        ) -> (Vec<TokenStream>, Vec<syn::Ident>) {
+            cli_name: &syn::Ident,
+            input_fields: &syn::Fields,
+        ) -> TokenStream {
+            let (cli_fields, ident_skip_field_vec) = fields(input_fields, name);
+
+            let from_trait_impl =
+                from_conversion::token_stream(name, cli_name, input_fields, &ident_skip_field_vec);
+            quote! {
+                #[derive(Debug, Default, Clone, clap::Parser, interactive_clap::ToCliArgs)]
+                #[clap(author, version, about, long_about = None)]
+                pub struct #cli_name {
+                    #( #cli_fields, )*
+                }
+
+                impl interactive_clap::ToCli for #name {
+                    type CliVariant = #cli_name;
+                }
+
+                impl #name {
+                    pub fn try_parse() -> Result<#cli_name, clap::Error> {
+                        <#cli_name as clap::Parser>::try_parse()
+                    }
+
+                    pub fn parse() -> #cli_name {
+                        <#cli_name as clap::Parser>::parse()
+                    }
+
+                    pub fn try_parse_from<I, T>(itr: I) -> Result<#cli_name, clap::Error>
+                    where
+                        I: ::std::iter::IntoIterator<Item = T>,
+                        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
+                    {
+                        <#cli_name as clap::Parser>::try_parse_from(itr)
+                    }
+                }
+
+                #from_trait_impl
+            }
+        }
+
+        /// this module describes derive of all fields of `#cli_name` struct
+        /// based on transformation of input fields from `#name` struct
+        fn fields(fields: &syn::Fields, name: &syn::Ident) -> (Vec<TokenStream>, Vec<syn::Ident>) {
             let mut ident_skip_field_vec: Vec<syn::Ident> = Vec::new();
 
             let fields = fields
@@ -457,6 +458,13 @@ mod structs {
                 .collect::<Vec<_>>();
             (fields, ident_skip_field_vec)
         }
+
+        /// this module describes the derive of `impl From<#name> for #cli_name`
+        mod from_conversion;
+
+        /// this module describes derive of individual field of `#cli_name` struct
+        /// based on transformation of input field from `#name` struct
+        mod field;
     }
 }
 
@@ -503,51 +511,5 @@ fn context_scope_for_enum(name: &syn::Ident) -> proc_macro2::TokenStream {
         impl interactive_clap::ToInteractiveClapContextScope for #name {
                     type InteractiveClapContextScope = #interactive_clap_context_scope_for_enum;
                 }
-    }
-}
-
-use crate::LONG_VEC_MUTLIPLE_OPT;
-
-fn for_cli_field(
-    field: &syn::Field,
-    ident_skip_field_vec: &[syn::Ident],
-) -> proc_macro2::TokenStream {
-    let ident_field = &field.clone().ident.expect("this field does not exist");
-    if ident_skip_field_vec.contains(ident_field) {
-        quote!()
-    } else {
-        let ty = &field.ty;
-        if field.attrs.iter().any(|attr|
-            attr.path.is_ident("interactive_clap") &&
-            attr.tokens.clone().into_iter().any(
-                |attr_token|
-                matches!(
-                    attr_token,
-                    proc_macro2::TokenTree::Group(group) if group.stream().to_string() == LONG_VEC_MUTLIPLE_OPT
-                )
-            )
-        ) {
-            return quote! {
-                #ident_field: args.#ident_field.into()
-            };
-        }
-
-        match &ty {
-            syn::Type::Path(type_path) => match type_path.path.segments.first() {
-                Some(path_segment) => {
-                    if path_segment.ident == "Option" || path_segment.ident == "bool" {
-                        quote! {
-                            #ident_field: args.#ident_field.into()
-                        }
-                    } else {
-                        quote! {
-                            #ident_field: Some(args.#ident_field.into())
-                        }
-                    }
-                }
-                _ => abort_call_site!("Only option `PathSegment` is needed"),
-            },
-            _ => abort_call_site!("Only option `Type::Path` is needed"),
-        }
     }
 }
