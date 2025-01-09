@@ -254,7 +254,7 @@ mod structs {
     ///     type CliVariant;
     /// }
     /// ```
-    /// Additionally a [`clap::Parser`](https://docs.rs/clap/4.5.24/clap/trait.Parser.html)  adapter
+    /// Additionally a [`clap::Parser`](https://docs.rs/clap/4.5.24/clap/trait.Parser.html) adapter
     /// for `#name` and `From<#name> for #cli_name` conversion are defined:
     ///
     /// ```ignore
@@ -279,7 +279,7 @@ mod structs {
     /// impl From<#name> for #cli_name {
     ///     fn from(args: #name) -> Self {
     ///         Self {
-    ///             #( #for_cli_fields, )*
+    ///             #( #fields_conversion, )*
     ///         }
     ///     }
     /// }
@@ -299,8 +299,9 @@ mod structs {
         ) -> TokenStream {
             let (cli_fields, ident_skip_field_vec) = fields(input_fields, name);
 
+            let clap_parser_adapter = clap_parser_trait_adapter::token_stream(name, cli_name);
             let from_trait_impl =
-                from_conversion::token_stream(name, cli_name, input_fields, &ident_skip_field_vec);
+                from_trait::token_stream(name, cli_name, input_fields, &ident_skip_field_vec);
             quote! {
                 #[derive(Debug, Default, Clone, clap::Parser, interactive_clap::ToCliArgs)]
                 #[clap(author, version, about, long_about = None)]
@@ -312,29 +313,13 @@ mod structs {
                     type CliVariant = #cli_name;
                 }
 
-                impl #name {
-                    pub fn try_parse() -> Result<#cli_name, clap::Error> {
-                        <#cli_name as clap::Parser>::try_parse()
-                    }
-
-                    pub fn parse() -> #cli_name {
-                        <#cli_name as clap::Parser>::parse()
-                    }
-
-                    pub fn try_parse_from<I, T>(itr: I) -> Result<#cli_name, clap::Error>
-                    where
-                        I: ::std::iter::IntoIterator<Item = T>,
-                        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
-                    {
-                        <#cli_name as clap::Parser>::try_parse_from(itr)
-                    }
-                }
+                #clap_parser_adapter
 
                 #from_trait_impl
             }
         }
 
-        /// this module describes derive of all fields of `#cli_name` struct
+        /// describes derive of all fields of `#cli_name` struct
         /// based on transformation of input fields from `#name` struct
         fn fields(fields: &syn::Fields, name: &syn::Ident) -> (Vec<TokenStream>, Vec<syn::Ident>) {
             let mut ident_skip_field_vec: Vec<syn::Ident> = Vec::new();
@@ -459,12 +444,16 @@ mod structs {
             (fields, ident_skip_field_vec)
         }
 
-        /// this module describes the derive of `impl From<#name> for #cli_name`
-        mod from_conversion;
-
-        /// this module describes derive of individual field of `#cli_name` struct
+        /// describes derive of individual field of `#cli_name` struct
         /// based on transformation of input field from `#name` struct
         mod field;
+
+        /// describes logic of derive of [`clap::Parser`](https://docs.rs/clap/4.5.24/clap/trait.Parser.html) adapter
+        /// for `#name` struct, which returns instances of `#cli_name` struct
+        mod clap_parser_trait_adapter;
+
+        /// describes the derive of `impl From<#name> for #cli_name`
+        mod from_trait;
     }
 }
 
