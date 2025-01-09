@@ -4,8 +4,8 @@ use proc_macro_error::abort_call_site;
 use quote::quote;
 use syn;
 
-pub fn field_type(ty: &syn::Type) -> proc_macro2::TokenStream {
-    match &ty {
+pub fn field_type(ty: &syn::Type) -> syn::Type {
+    let token_stream = match &ty {
         syn::Type::Path(type_path) => match type_path.path.segments.first() {
             Some(path_segment) => {
                 if path_segment.ident == "Option" {
@@ -35,5 +35,6 @@ pub fn field_type(ty: &syn::Type) -> proc_macro2::TokenStream {
             _ => abort_call_site!("Only option `PathSegment` is needed"),
         },
         _ => abort_call_site!("Only option `Type::Path` is needed"),
-    }
+    };
+    syn::parse2(token_stream).unwrap()
 }
