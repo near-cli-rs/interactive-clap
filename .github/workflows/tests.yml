@@ -20,3 +20,23 @@ jobs:
         profile: minimal
     - name: Tests
       run: cargo test --workspace
+  # there're sometimes warnings, which signal, that the generated doc
+  # won't look as expected, when rendered, and sometimes errors, which will prevent doc from being
+  # generated at release time altogether.
+  cargo-doc:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        default: true
+    - name: run cargo doc
+      env:
+        RUSTDOCFLAGS: -D warnings
+      run: |
+        cargo doc -p interactive-clap
+        cargo doc -p interactive-clap-derive --document-private-items
