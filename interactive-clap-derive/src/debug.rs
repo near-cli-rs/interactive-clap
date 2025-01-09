@@ -6,8 +6,7 @@ macro_rules! dbg_cond {
 }
 
 /// this macro under `introspect` feature can be used to debug how derive proc macros
-/// ([`crate::InteractiveClap`], [`crate::ToCliArgs`])
-/// work similar to the following:
+/// ([`crate::InteractiveClap`], [`crate::ToCliArgs`]) work
 ///
 /// ```bash
 /// # interactive-clap-derive folder
