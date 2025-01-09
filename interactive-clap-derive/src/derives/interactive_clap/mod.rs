@@ -1,6 +1,5 @@
 extern crate proc_macro;
 
-use methods::cli_field_type;
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort_call_site;
 use quote::{quote, ToTokens};
@@ -297,6 +296,10 @@ mod structs {
         use proc_macro_error::abort_call_site;
         use quote::{quote, ToTokens};
 
+        /// this module describes derive of individual field of `#cli_name` struct
+        /// based on transformation of input field from `#name` struct
+        mod field;
+
         pub fn fields(
             fields: &syn::Fields,
             name: &syn::Ident,
@@ -308,7 +311,7 @@ mod structs {
                 .map(|field| {
                     let ident_field = field.ident.clone().expect("this field does not exist");
                     let ty = &field.ty;
-                    let cli_ty = super::super::methods::cli_field_type::cli_field_type(ty);
+                    let cli_ty = self::field::field_type(ty);
                     let mut cli_field = quote! {
                         pub #ident_field: #cli_ty
                     };
@@ -376,7 +379,7 @@ mod structs {
                                             cli_field = quote!()
                                         };
                                         if group.stream().to_string() == LONG_VEC_MUTLIPLE_OPT {
-                                            if !super::super::cli_field_type::starts_with_vec(ty) {
+                                            if !crate::helpers::type_starts_with_vec(ty) {
                                                 abort_call_site!("`{}` attribute is only supposed to be used with `Vec` types", LONG_VEC_MUTLIPLE_OPT)
                                             }
                                             // implies `#[interactive_clap(long)]`
