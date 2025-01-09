@@ -1,7 +1,4 @@
-fn pretty_codegen(ts: &proc_macro2::TokenStream) -> String {
-    let file = syn::parse_file(&ts.to_string()).unwrap();
-    prettyplease::unparse(&file)
-}
+use super::pretty_codegen;
 
 #[test]
 fn test_simple_struct() {
@@ -80,6 +77,34 @@ fn test_vec_multiple_opt_err() {
         struct Args {
             #[interactive_clap(long_vec_multiple_opt)]
             pub env: String,
+        }
+    };
+
+    let interactive_clap_codegen = crate::derives::interactive_clap::impl_interactive_clap(&input);
+    insta::assert_snapshot!(pretty_codegen(&interactive_clap_codegen));
+}
+
+/// this test checks if doc comments are propagated up to `CliArgs` struct,
+/// which has `clap::Parser` derive on it
+///
+/// also it checks that `#[interactive_clap(verbatim_doc_comment)]` attribute
+/// gets transferred to `#[clap(verbatim_doc_comment)]` on `second_field` of
+/// the same `CliArgs` struct
+#[test]
+fn test_doc_comments_propagate() {
+    let input = syn::parse_quote! {
+        struct Args {
+            /// short first field description
+            ///
+            /// a longer paragraph, describing the usage and stuff with first field's
+            /// awarenes of its possible applications
+            first_field: u64,
+            /// short second field description
+            ///
+            /// a longer paragraph, describing the usage and stuff with second field's
+            /// awareness of its possible applications
+            #[interactive_clap(verbatim_doc_comment)]
+            second_field: String,
         }
     };
 

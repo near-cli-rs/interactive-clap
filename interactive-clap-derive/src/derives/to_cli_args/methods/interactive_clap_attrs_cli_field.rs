@@ -5,8 +5,6 @@ use proc_macro_error::abort_call_site;
 use quote::{quote, ToTokens};
 use syn;
 
-use crate::derives::interactive_clap::methods::cli_field_type;
-
 #[derive(Debug, Clone)]
 pub enum InteractiveClapAttrsCliField {
     RegularField(proc_macro2::TokenStream),
@@ -83,7 +81,9 @@ impl InteractiveClapAttrsCliField {
                                                             args.push_front(std::concat!("--", #ident_field_to_kebab_case).to_string());
                                                         }
                                                     };
-                                                    if cli_field_type::starts_with_vec(&field.ty) {
+                                                    if crate::helpers::type_starts_with_vec(
+                                                        &field.ty,
+                                                    ) {
                                                         unnamed_args = quote! {
                                                             for arg in self.#ident_field.iter().rev() {
                                                                 args.push_front(arg.to_string());

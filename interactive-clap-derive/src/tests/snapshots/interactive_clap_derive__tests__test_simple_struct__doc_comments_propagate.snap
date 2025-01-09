@@ -5,9 +5,17 @@ expression: pretty_codegen(&interactive_clap_codegen)
 #[derive(Debug, Default, Clone, clap::Parser, interactive_clap::ToCliArgs)]
 #[clap(author, version, about, long_about = None)]
 pub struct CliArgs {
-    pub age: Option<<u64 as interactive_clap::ToCli>::CliVariant>,
-    pub first_name: Option<<String as interactive_clap::ToCli>::CliVariant>,
-    pub second_name: Option<<String as interactive_clap::ToCli>::CliVariant>,
+    /// short first field description
+    ///
+    /// a longer paragraph, describing the usage and stuff with first field's
+    /// awarenes of its possible applications
+    pub first_field: Option<<u64 as interactive_clap::ToCli>::CliVariant>,
+    /// short second field description
+    ///
+    /// a longer paragraph, describing the usage and stuff with second field's
+    /// awareness of its possible applications
+    #[clap(verbatim_doc_comment)]
+    pub second_field: Option<<String as interactive_clap::ToCli>::CliVariant>,
 }
 impl interactive_clap::ToCli for Args {
     type CliVariant = CliArgs;
@@ -30,15 +38,23 @@ impl Args {
 impl From<Args> for CliArgs {
     fn from(args: Args) -> Self {
         Self {
-            age: Some(args.age.into()),
-            first_name: Some(args.first_name.into()),
-            second_name: Some(args.second_name.into()),
+            first_field: Some(args.first_field.into()),
+            second_field: Some(args.second_field.into()),
         }
     }
 }
 impl Args {
-    fn input_age(_context: &()) -> color_eyre::eyre::Result<Option<u64>> {
-        match inquire::CustomType::new("age").prompt() {
+    fn input_first_field(_context: &()) -> color_eyre::eyre::Result<Option<u64>> {
+        match inquire::CustomType::new(
+                concat!(
+                    r" short first field description", r"",
+                    r" a longer paragraph, describing the usage and stuff with first field's",
+                    r" awarenes of its possible applications",
+                )
+                    .trim(),
+            )
+            .prompt()
+        {
             Ok(value) => Ok(Some(value)),
             Err(
                 inquire::error::InquireError::OperationCanceled
@@ -47,18 +63,17 @@ impl Args {
             Err(err) => Err(err.into()),
         }
     }
-    fn input_first_name(_context: &()) -> color_eyre::eyre::Result<Option<String>> {
-        match inquire::CustomType::new("first_name").prompt() {
-            Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
-            Err(err) => Err(err.into()),
-        }
-    }
-    fn input_second_name(_context: &()) -> color_eyre::eyre::Result<Option<String>> {
-        match inquire::CustomType::new("second_name").prompt() {
+    fn input_second_field(_context: &()) -> color_eyre::eyre::Result<Option<String>> {
+        match inquire::CustomType::new(
+                concat!(
+                    r" short second field description", r"",
+                    r" a longer paragraph, describing the usage and stuff with second field's",
+                    r" awareness of its possible applications",
+                )
+                    .trim(),
+            )
+            .prompt()
+        {
             Ok(value) => Ok(Some(value)),
             Err(
                 inquire::error::InquireError::OperationCanceled
@@ -69,9 +84,8 @@ impl Args {
     }
 }
 pub struct InteractiveClapContextScopeForArgs {
-    pub age: u64,
-    pub first_name: String,
-    pub second_name: String,
+    pub first_field: u64,
+    pub second_field: String,
 }
 impl interactive_clap::ToInteractiveClapContextScope for Args {
     type InteractiveClapContextScope = InteractiveClapContextScopeForArgs;
@@ -90,10 +104,10 @@ impl interactive_clap::FromCli for Args {
         Self: Sized + interactive_clap::ToCli,
     {
         let mut clap_variant = optional_clap_variant.clone().unwrap_or_default();
-        if clap_variant.age.is_none() {
+        if clap_variant.first_field.is_none() {
             clap_variant
-                .age = match Self::input_age(&context) {
-                Ok(Some(age)) => Some(age),
+                .first_field = match Self::input_first_field(&context) {
+                Ok(Some(first_field)) => Some(first_field),
                 Ok(None) => {
                     return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
                 }
@@ -102,11 +116,11 @@ impl interactive_clap::FromCli for Args {
                 }
             };
         }
-        let age = clap_variant.age.clone().expect("Unexpected error");
-        if clap_variant.first_name.is_none() {
+        let first_field = clap_variant.first_field.clone().expect("Unexpected error");
+        if clap_variant.second_field.is_none() {
             clap_variant
-                .first_name = match Self::input_first_name(&context) {
-                Ok(Some(first_name)) => Some(first_name),
+                .second_field = match Self::input_second_field(&context) {
+                Ok(Some(second_field)) => Some(second_field),
                 Ok(None) => {
                     return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
                 }
@@ -115,24 +129,10 @@ impl interactive_clap::FromCli for Args {
                 }
             };
         }
-        let first_name = clap_variant.first_name.clone().expect("Unexpected error");
-        if clap_variant.second_name.is_none() {
-            clap_variant
-                .second_name = match Self::input_second_name(&context) {
-                Ok(Some(second_name)) => Some(second_name),
-                Ok(None) => {
-                    return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
-                }
-                Err(err) => {
-                    return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
-                }
-            };
-        }
-        let second_name = clap_variant.second_name.clone().expect("Unexpected error");
+        let second_field = clap_variant.second_field.clone().expect("Unexpected error");
         let new_context_scope = InteractiveClapContextScopeForArgs {
-            age: age.into(),
-            first_name: first_name.into(),
-            second_name: second_name.into(),
+            first_field: first_field.into(),
+            second_field: second_field.into(),
         };
         interactive_clap::ResultFromCli::Ok(clap_variant)
     }
