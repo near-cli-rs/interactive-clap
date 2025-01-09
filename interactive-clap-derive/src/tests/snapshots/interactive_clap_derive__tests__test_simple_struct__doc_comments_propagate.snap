@@ -20,6 +20,69 @@ pub struct CliArgs {
 impl interactive_clap::ToCli for Args {
     type CliVariant = CliArgs;
 }
+impl Args {
+    pub fn try_parse() -> Result<CliArgs, clap::Error> {
+        <CliArgs as clap::Parser>::try_parse()
+    }
+    pub fn parse() -> CliArgs {
+        <CliArgs as clap::Parser>::parse()
+    }
+    pub fn try_parse_from<I, T>(itr: I) -> Result<CliArgs, clap::Error>
+    where
+        I: ::std::iter::IntoIterator<Item = T>,
+        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
+    {
+        <CliArgs as clap::Parser>::try_parse_from(itr)
+    }
+}
+impl From<Args> for CliArgs {
+    fn from(args: Args) -> Self {
+        Self {
+            first_field: Some(args.first_field.into()),
+            second_field: Some(args.second_field.into()),
+        }
+    }
+}
+impl Args {
+    fn input_first_field(_context: &()) -> color_eyre::eyre::Result<Option<u64>> {
+        match inquire::CustomType::new(
+                concat!(
+                    r" short first field description", r"",
+                    r" a longer paragraph, describing the usage and stuff with first field's",
+                    r" awarenes of its possible applications",
+                )
+                    .trim(),
+            )
+            .prompt()
+        {
+            Ok(value) => Ok(Some(value)),
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => Ok(None),
+            Err(err) => Err(err.into()),
+        }
+    }
+    fn input_second_field(_context: &()) -> color_eyre::eyre::Result<Option<String>> {
+        match inquire::CustomType::new(
+                concat!(
+                    r" short second field description", r"",
+                    r" a longer paragraph, describing the usage and stuff with second field's",
+                    r" awareness of its possible applications",
+                )
+                    .trim(),
+            )
+            .prompt()
+        {
+            Ok(value) => Ok(Some(value)),
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => Ok(None),
+            Err(err) => Err(err.into()),
+        }
+    }
+}
 pub struct InteractiveClapContextScopeForArgs {
     pub first_field: u64,
     pub second_field: String,
@@ -72,66 +135,5 @@ impl interactive_clap::FromCli for Args {
             second_field: second_field.into(),
         };
         interactive_clap::ResultFromCli::Ok(clap_variant)
-    }
-}
-impl Args {
-    fn input_first_field(_context: &()) -> color_eyre::eyre::Result<Option<u64>> {
-        match inquire::CustomType::new(
-                concat!(
-                    r" short first field description", r"",
-                    r" a longer paragraph, describing the usage and stuff with first field's",
-                    r" awarenes of its possible applications",
-                )
-                    .trim(),
-            )
-            .prompt()
-        {
-            Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
-            Err(err) => Err(err.into()),
-        }
-    }
-    fn input_second_field(_context: &()) -> color_eyre::eyre::Result<Option<String>> {
-        match inquire::CustomType::new(
-                concat!(
-                    r" short second field description", r"",
-                    r" a longer paragraph, describing the usage and stuff with second field's",
-                    r" awareness of its possible applications",
-                )
-                    .trim(),
-            )
-            .prompt()
-        {
-            Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
-            Err(err) => Err(err.into()),
-        }
-    }
-    pub fn try_parse() -> Result<CliArgs, clap::Error> {
-        <CliArgs as clap::Parser>::try_parse()
-    }
-    pub fn parse() -> CliArgs {
-        <CliArgs as clap::Parser>::parse()
-    }
-    pub fn try_parse_from<I, T>(itr: I) -> Result<CliArgs, clap::Error>
-    where
-        I: ::std::iter::IntoIterator<Item = T>,
-        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
-    {
-        <CliArgs as clap::Parser>::try_parse_from(itr)
-    }
-}
-impl From<Args> for CliArgs {
-    fn from(args: Args) -> Self {
-        Self {
-            first_field: Some(args.first_field.into()),
-            second_field: Some(args.second_field.into()),
-        }
     }
 }

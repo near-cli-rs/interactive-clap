@@ -93,13 +93,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                     type CliVariant = #cli_name;
                 }
 
-                #context_scope_for_struct
-
-                #fn_from_cli_for_struct
-
                 impl #name {
-                    #(#vec_fn_input_arg)*
-
                     pub fn try_parse() -> Result<#cli_name, clap::Error> {
                         <#cli_name as clap::Parser>::try_parse()
                     }
@@ -124,6 +118,14 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
                         }
                     }
                 }
+
+                impl #name {
+                    #(#vec_fn_input_arg)*
+                }
+
+                #context_scope_for_struct
+
+                #fn_from_cli_for_struct
 
                 #clap_enum_for_named_arg
             }
@@ -287,6 +289,36 @@ mod structs {
     /// ```ignore
     /// pub trait ToCli {
     ///     type CliVariant;
+    /// }
+    /// ```
+    /// Additionally a [`clap::Parser`](https://docs.rs/clap/4.5.24/clap/trait.Parser.html)  adapter
+    /// for `#name` and `From<#name> for #cli_name` conversion are defined:
+    ///
+    /// ```ignore
+    /// impl #name {
+    ///     pub fn try_parse() -> Result<#cli_name, clap::Error> {
+    ///         <#cli_name as clap::Parser>::try_parse()
+    ///     }
+    ///
+    ///     pub fn parse() -> #cli_name {
+    ///         <#cli_name as clap::Parser>::parse()
+    ///     }
+    ///
+    ///     pub fn try_parse_from<I, T>(itr: I) -> Result<#cli_name, clap::Error>
+    ///     where
+    ///         I: ::std::iter::IntoIterator<Item = T>,
+    ///         T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
+    ///     {
+    ///         <#cli_name as clap::Parser>::try_parse_from(itr)
+    ///     }
+    /// }
+    ///
+    /// impl From<#name> for #cli_name {
+    ///     fn from(args: #name) -> Self {
+    ///         Self {
+    ///             #( #for_cli_fields, )*
+    ///         }
+    ///     }
     /// }
     /// ```
     pub mod cli_variant_of_to_cli_trait {

@@ -12,6 +12,40 @@ pub struct CliArgs {
 impl interactive_clap::ToCli for Args {
     type CliVariant = CliArgs;
 }
+impl Args {
+    pub fn try_parse() -> Result<CliArgs, clap::Error> {
+        <CliArgs as clap::Parser>::try_parse()
+    }
+    pub fn parse() -> CliArgs {
+        <CliArgs as clap::Parser>::parse()
+    }
+    pub fn try_parse_from<I, T>(itr: I) -> Result<CliArgs, clap::Error>
+    where
+        I: ::std::iter::IntoIterator<Item = T>,
+        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
+    {
+        <CliArgs as clap::Parser>::try_parse_from(itr)
+    }
+}
+impl From<Args> for CliArgs {
+    fn from(args: Args) -> Self {
+        Self {
+            offline: args.offline.into(),
+        }
+    }
+}
+impl Args {
+    fn input_offline(_context: &()) -> color_eyre::eyre::Result<Option<bool>> {
+        match inquire::CustomType::new(concat!(r" Offline mode",).trim()).prompt() {
+            Ok(value) => Ok(Some(value)),
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => Ok(None),
+            Err(err) => Err(err.into()),
+        }
+    }
+}
 pub struct InteractiveClapContextScopeForArgs {
     pub offline: bool,
 }
@@ -37,37 +71,5 @@ impl interactive_clap::FromCli for Args {
             offline: offline.into(),
         };
         interactive_clap::ResultFromCli::Ok(clap_variant)
-    }
-}
-impl Args {
-    fn input_offline(_context: &()) -> color_eyre::eyre::Result<Option<bool>> {
-        match inquire::CustomType::new(concat!(r" Offline mode",).trim()).prompt() {
-            Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
-            Err(err) => Err(err.into()),
-        }
-    }
-    pub fn try_parse() -> Result<CliArgs, clap::Error> {
-        <CliArgs as clap::Parser>::try_parse()
-    }
-    pub fn parse() -> CliArgs {
-        <CliArgs as clap::Parser>::parse()
-    }
-    pub fn try_parse_from<I, T>(itr: I) -> Result<CliArgs, clap::Error>
-    where
-        I: ::std::iter::IntoIterator<Item = T>,
-        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
-    {
-        <CliArgs as clap::Parser>::try_parse_from(itr)
-    }
-}
-impl From<Args> for CliArgs {
-    fn from(args: Args) -> Self {
-        Self {
-            offline: args.offline.into(),
-        }
     }
 }

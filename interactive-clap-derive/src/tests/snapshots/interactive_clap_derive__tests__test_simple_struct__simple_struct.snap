@@ -12,6 +12,62 @@ pub struct CliArgs {
 impl interactive_clap::ToCli for Args {
     type CliVariant = CliArgs;
 }
+impl Args {
+    pub fn try_parse() -> Result<CliArgs, clap::Error> {
+        <CliArgs as clap::Parser>::try_parse()
+    }
+    pub fn parse() -> CliArgs {
+        <CliArgs as clap::Parser>::parse()
+    }
+    pub fn try_parse_from<I, T>(itr: I) -> Result<CliArgs, clap::Error>
+    where
+        I: ::std::iter::IntoIterator<Item = T>,
+        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
+    {
+        <CliArgs as clap::Parser>::try_parse_from(itr)
+    }
+}
+impl From<Args> for CliArgs {
+    fn from(args: Args) -> Self {
+        Self {
+            age: Some(args.age.into()),
+            first_name: Some(args.first_name.into()),
+            second_name: Some(args.second_name.into()),
+        }
+    }
+}
+impl Args {
+    fn input_age(_context: &()) -> color_eyre::eyre::Result<Option<u64>> {
+        match inquire::CustomType::new("age").prompt() {
+            Ok(value) => Ok(Some(value)),
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => Ok(None),
+            Err(err) => Err(err.into()),
+        }
+    }
+    fn input_first_name(_context: &()) -> color_eyre::eyre::Result<Option<String>> {
+        match inquire::CustomType::new("first_name").prompt() {
+            Ok(value) => Ok(Some(value)),
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => Ok(None),
+            Err(err) => Err(err.into()),
+        }
+    }
+    fn input_second_name(_context: &()) -> color_eyre::eyre::Result<Option<String>> {
+        match inquire::CustomType::new("second_name").prompt() {
+            Ok(value) => Ok(Some(value)),
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => Ok(None),
+            Err(err) => Err(err.into()),
+        }
+    }
+}
 pub struct InteractiveClapContextScopeForArgs {
     pub age: u64,
     pub first_name: String,
@@ -79,59 +135,5 @@ impl interactive_clap::FromCli for Args {
             second_name: second_name.into(),
         };
         interactive_clap::ResultFromCli::Ok(clap_variant)
-    }
-}
-impl Args {
-    fn input_age(_context: &()) -> color_eyre::eyre::Result<Option<u64>> {
-        match inquire::CustomType::new("age").prompt() {
-            Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
-            Err(err) => Err(err.into()),
-        }
-    }
-    fn input_first_name(_context: &()) -> color_eyre::eyre::Result<Option<String>> {
-        match inquire::CustomType::new("first_name").prompt() {
-            Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
-            Err(err) => Err(err.into()),
-        }
-    }
-    fn input_second_name(_context: &()) -> color_eyre::eyre::Result<Option<String>> {
-        match inquire::CustomType::new("second_name").prompt() {
-            Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
-            Err(err) => Err(err.into()),
-        }
-    }
-    pub fn try_parse() -> Result<CliArgs, clap::Error> {
-        <CliArgs as clap::Parser>::try_parse()
-    }
-    pub fn parse() -> CliArgs {
-        <CliArgs as clap::Parser>::parse()
-    }
-    pub fn try_parse_from<I, T>(itr: I) -> Result<CliArgs, clap::Error>
-    where
-        I: ::std::iter::IntoIterator<Item = T>,
-        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
-    {
-        <CliArgs as clap::Parser>::try_parse_from(itr)
-    }
-}
-impl From<Args> for CliArgs {
-    fn from(args: Args) -> Self {
-        Self {
-            age: Some(args.age.into()),
-            first_name: Some(args.first_name.into()),
-            second_name: Some(args.second_name.into()),
-        }
     }
 }
