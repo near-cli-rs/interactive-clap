@@ -265,7 +265,7 @@ fn context_scope_for_struct_field(field: &syn::Field) -> proc_macro2::TokenStrea
     let ident_field = &field.ident.clone().expect("this field does not exist");
     let ty = &field.ty;
     if !self::structs::common_methods::is_field_with_subcommand::predicate(field)
-        && !self::common_methods::fields_with_subargs::is_field_with_subargs(field)
+        && !self::structs::common_methods::is_field_with_subargs::predicate(field)
     {
         quote! {
             pub #ident_field: #ty

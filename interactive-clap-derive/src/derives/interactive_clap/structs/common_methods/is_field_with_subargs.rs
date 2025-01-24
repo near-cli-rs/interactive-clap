@@ -2,7 +2,7 @@ extern crate proc_macro;
 
 use syn;
 
-pub fn is_field_with_subargs(field: &syn::Field) -> bool {
+pub fn predicate(field: &syn::Field) -> bool {
     if field.attrs.is_empty() {
         return false;
     }

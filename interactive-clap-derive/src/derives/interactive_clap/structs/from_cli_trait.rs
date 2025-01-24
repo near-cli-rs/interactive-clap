@@ -22,7 +22,7 @@ pub fn token_stream(ast: &syn::DeriveInput, fields: &syn::Fields) -> proc_macro2
         .iter()
         .filter(|field| {
             !structs_methods::is_field_with_subcommand::predicate(field)
-                && !common_methods::fields_with_subargs::is_field_with_subargs(field)
+                && !structs_methods::is_field_with_subargs::predicate(field)
         })
         .map(|field| {
             let ident_field = &field.clone().ident.expect("this field does not exist");
@@ -125,7 +125,7 @@ fn fields_value(field: &syn::Field) -> proc_macro2::TokenStream {
             let #ident_field = clap_variant.#ident_field.clone();
         }
     } else if !structs_methods::is_field_with_subcommand::predicate(field)
-        && !common_methods::fields_with_subargs::is_field_with_subargs(field)
+        && !structs_methods::is_field_with_subargs::predicate(field)
     {
         quote! {
             if clap_variant.#ident_field.is_none() {
