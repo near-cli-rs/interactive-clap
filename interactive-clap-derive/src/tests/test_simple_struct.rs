@@ -23,7 +23,7 @@ fn test_simple_struct_with_named_arg() {
         struct Account {
             #[interactive_clap(named_arg)]
             ///Specify a sender
-            account: Sender,
+            field_name: Sender,
         }
     };
 

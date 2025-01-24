@@ -7,7 +7,7 @@ expression: pretty_codegen(&interactive_clap_codegen)
 pub struct CliAccount {
     ///Specify a sender
     #[clap(subcommand)]
-    pub account: Option<ClapNamedArgSenderForAccount>,
+    pub field_name: Option<ClapNamedArgSenderForAccount>,
 }
 impl interactive_clap::ToCli for Account {
     type CliVariant = CliAccount;
@@ -30,7 +30,7 @@ impl Account {
 impl From<Account> for CliAccount {
     fn from(args: Account) -> Self {
         Self {
-            account: Some(args.account.into()),
+            field_name: Some(args.field_name.into()),
         }
     }
 }
@@ -55,8 +55,8 @@ impl interactive_clap::FromCli for Account {
         let mut clap_variant = optional_clap_variant.clone().unwrap_or_default();
         let new_context_scope = InteractiveClapContextScopeForAccount {
         };
-        let optional_field = match clap_variant.account.take() {
-            Some(ClapNamedArgSenderForAccount::Account(cli_arg)) => Some(cli_arg),
+        let optional_field = match clap_variant.field_name.take() {
+            Some(ClapNamedArgSenderForAccount::FieldName(cli_arg)) => Some(cli_arg),
             None => None,
         };
         match <Sender as interactive_clap::FromCli>::from_cli(
@@ -65,12 +65,14 @@ impl interactive_clap::FromCli for Account {
         ) {
             interactive_clap::ResultFromCli::Ok(cli_field) => {
                 clap_variant
-                    .account = Some(ClapNamedArgSenderForAccount::Account(cli_field));
+                    .field_name = Some(
+                    ClapNamedArgSenderForAccount::FieldName(cli_field),
+                );
             }
             interactive_clap::ResultFromCli::Cancel(optional_cli_field) => {
                 clap_variant
-                    .account = optional_cli_field
-                    .map(ClapNamedArgSenderForAccount::Account);
+                    .field_name = optional_cli_field
+                    .map(ClapNamedArgSenderForAccount::FieldName);
                 return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
             }
             interactive_clap::ResultFromCli::Back => {
@@ -78,8 +80,8 @@ impl interactive_clap::FromCli for Account {
             }
             interactive_clap::ResultFromCli::Err(optional_cli_field, err) => {
                 clap_variant
-                    .account = optional_cli_field
-                    .map(ClapNamedArgSenderForAccount::Account);
+                    .field_name = optional_cli_field
+                    .map(ClapNamedArgSenderForAccount::FieldName);
                 return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
             }
         };
@@ -89,10 +91,10 @@ impl interactive_clap::FromCli for Account {
 #[derive(Debug, Clone, clap::Parser, interactive_clap_derive::ToCliArgs)]
 pub enum ClapNamedArgSenderForAccount {
     ///Specify a sender
-    Account(<Sender as interactive_clap::ToCli>::CliVariant),
+    FieldName(<Sender as interactive_clap::ToCli>::CliVariant),
 }
 impl From<Sender> for ClapNamedArgSenderForAccount {
     fn from(item: Sender) -> Self {
-        Self::Account(<Sender as interactive_clap::ToCli>::CliVariant::from(item))
+        Self::FieldName(<Sender as interactive_clap::ToCli>::CliVariant::from(item))
     }
 }

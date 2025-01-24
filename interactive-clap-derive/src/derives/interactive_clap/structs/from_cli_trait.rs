@@ -1,5 +1,3 @@
-extern crate proc_macro;
-
 use proc_macro2::Span;
 use proc_macro_error::abort_call_site;
 use quote::{quote, ToTokens};
