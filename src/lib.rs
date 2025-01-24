@@ -31,6 +31,7 @@ impl ToCli for bool {
     type CliVariant = bool;
 }
 
+// TODO: the trait can clearly be shortened/renamed to `ContextScope`
 pub trait ToInteractiveClapContextScope {
     type InteractiveClapContextScope;
 }

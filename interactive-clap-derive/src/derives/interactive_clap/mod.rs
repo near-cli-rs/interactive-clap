@@ -22,12 +22,8 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
 
             let input_args_impl_block = self::structs::input_args_impl::token_stream(ast, &fields);
 
-            let context_scope_fields = fields
-                .iter()
-                .map(context_scope_for_struct_field)
-                .filter(|token_stream| !token_stream.is_empty())
-                .collect::<Vec<_>>();
-            let context_scope_for_struct = context_scope_for_struct(name, context_scope_fields);
+            let to_interactive_clap_context_scope_trait_block =
+                self::structs::to_interactive_clap_context_scope_trait::token_stream(ast, &fields);
 
             let clap_enum_for_named_arg = fields.iter().find_map(|field| {
                 let ident_field = &field.clone().ident.expect("this field does not exist");
@@ -81,7 +77,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
 
                 #input_args_impl_block
 
-                #context_scope_for_struct
+                #to_interactive_clap_context_scope_trait_block
 
                 #from_cli_trait_block
 
@@ -237,42 +233,14 @@ mod structs {
     #[doc = include_str!("../../../docs/structs_input_args_impl_docstring.md")]
     pub mod input_args_impl;
 
+    #[doc = include_str!("../../../docs/structs_to_interactive_clap_context_scope_trait_docstring.md")]
+    pub mod to_interactive_clap_context_scope_trait;
+
     #[doc = include_str!("../../../docs/structs_from_cli_trait_docstring.md")]
     pub mod from_cli_trait;
 
+    /// these are common field methods, reused by other [structs](super::structs) submodules
     pub(super) mod common_field_methods;
-}
-
-fn context_scope_for_struct(
-    name: &syn::Ident,
-    context_scope_fields: Vec<proc_macro2::TokenStream>,
-) -> proc_macro2::TokenStream {
-    let interactive_clap_context_scope_for_struct = syn::Ident::new(
-        &format!("InteractiveClapContextScopeFor{}", &name),
-        Span::call_site(),
-    );
-    quote! {
-        pub struct #interactive_clap_context_scope_for_struct {
-            #(#context_scope_fields,)*
-        }
-        impl interactive_clap::ToInteractiveClapContextScope for #name {
-            type InteractiveClapContextScope = #interactive_clap_context_scope_for_struct;
-        }
-    }
-}
-
-fn context_scope_for_struct_field(field: &syn::Field) -> proc_macro2::TokenStream {
-    let ident_field = &field.ident.clone().expect("this field does not exist");
-    let ty = &field.ty;
-    if !self::structs::common_field_methods::with_subcommand::predicate(field)
-        && !self::structs::common_field_methods::with_subargs::predicate(field)
-    {
-        quote! {
-            pub #ident_field: #ty
-        }
-    } else {
-        quote!()
-    }
 }
 
 fn context_scope_for_enum(name: &syn::Ident) -> proc_macro2::TokenStream {

@@ -3,6 +3,10 @@
 This modules describes derive of `interactive_clap::FromCli` trait for `#name` struct,
 which happens during derive of [`crate::InteractiveClap`] for `#name` struct:
 
+The implementation combines usages of all of [super::structs::to_cli_trait], [super::structs::input_args_impl],
+[super::structs::to_interactive_clap_context_scope_trait]
+
+
 derive input `#name`
 
 ```rust,ignore
@@ -56,7 +60,7 @@ impl interactive_clap::FromCli for #name {
             };
         }
         let first_name = clap_variant.first_name.clone().expect("Unexpected error");
-        let new_context_scope = InteractiveClapContextScopeForArgs {
+        let new_context_scope = InteractiveClapContextScopeFor#name {
             age: age.into(),
             first_name: first_name.into(),
         };
