@@ -5,6 +5,7 @@ use proc_macro_error::abort_call_site;
 use quote::{quote, ToTokens};
 use syn;
 
+use super::common_methods as structs_methods;
 use crate::derives::interactive_clap::common_methods;
 
 /// returns the whole result `TokenStream` of derive logic of containing module
@@ -20,7 +21,7 @@ pub fn token_stream(ast: &syn::DeriveInput, fields: &syn::Fields) -> proc_macro2
     let fields_without_subcommand_and_subargs = fields
         .iter()
         .filter(|field| {
-            !common_methods::fields_with_subcommand::is_field_with_subcommand(field)
+            !structs_methods::is_field_with_subcommand::predicate(field)
                 && !common_methods::fields_with_subargs::is_field_with_subargs(field)
         })
         .map(|field| {
@@ -123,7 +124,7 @@ fn fields_value(field: &syn::Field) -> proc_macro2::TokenStream {
             };
             let #ident_field = clap_variant.#ident_field.clone();
         }
-    } else if !common_methods::fields_with_subcommand::is_field_with_subcommand(field)
+    } else if !structs_methods::is_field_with_subcommand::predicate(field)
         && !common_methods::fields_with_subargs::is_field_with_subargs(field)
     {
         quote! {

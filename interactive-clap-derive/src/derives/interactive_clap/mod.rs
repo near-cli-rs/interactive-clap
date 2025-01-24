@@ -226,7 +226,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
 }
 
 /// these are common methods, reused for both the [structs] and `enums` derives
-pub(crate) mod common_methods;
+pub(super) mod common_methods;
 
 /// This module describes [`crate::InteractiveClap`] derive logic in case when [`syn::DeriveInput`]
 /// is a struct
@@ -239,6 +239,8 @@ mod structs {
 
     #[doc = include_str!("../../../docs/structs_from_cli_trait_docstring.md")]
     pub mod from_cli_trait;
+
+    pub(super) mod common_methods;
 }
 
 fn context_scope_for_struct(
@@ -262,7 +264,7 @@ fn context_scope_for_struct(
 fn context_scope_for_struct_field(field: &syn::Field) -> proc_macro2::TokenStream {
     let ident_field = &field.ident.clone().expect("this field does not exist");
     let ty = &field.ty;
-    if !self::common_methods::fields_with_subcommand::is_field_with_subcommand(field)
+    if !self::structs::common_methods::is_field_with_subcommand::predicate(field)
         && !self::common_methods::fields_with_subargs::is_field_with_subargs(field)
     {
         quote! {
