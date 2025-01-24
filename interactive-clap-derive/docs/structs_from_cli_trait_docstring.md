@@ -1,4 +1,6 @@
-This modules describes of `interactive_clap::FromCli` trait for `#name` struct,
+`interactive_clap::FromCli` derive
+
+This modules describes derive of `interactive_clap::FromCli` trait for `#name` struct,
 which happens during derive of [`crate::InteractiveClap`] for `#name` struct:
 
 derive input `#name`
@@ -7,7 +9,6 @@ derive input `#name`
 struct #name {
     age: u64,
     first_name: String,
-    second_name: String,
 }
 ```
 

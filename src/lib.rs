@@ -46,6 +46,10 @@ pub enum ResultFromCli<T, E> {
     Err(Option<T>, E),
 }
 
+/// This trait drives the state machine of `interactive_clap`
+///
+/// It selects next command variants with [inquire::Select](https://docs.rs/inquire/0.6.2/inquire/struct.Select.html)
+/// and prompts for non-optional arguments with [inquire::CustomType](https://docs.rs/inquire/0.6.2/inquire/struct.CustomType.html)  
 pub trait FromCli {
     type FromCliContext;
     type FromCliError;

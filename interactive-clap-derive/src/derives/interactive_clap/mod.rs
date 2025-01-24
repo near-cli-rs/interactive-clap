@@ -20,7 +20,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
 
             let from_cli_trait_block = self::structs::from_cli_trait::token_stream(ast, &fields);
 
-            let vec_fn_input_arg = self::common_methods::input_arg::vec_fn_input_arg(ast, &fields);
+            let input_args_impl_block = self::structs::input_args_impl::token_stream(ast, &fields);
 
             let context_scope_fields = fields
                 .iter()
@@ -79,9 +79,7 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
             quote! {
                 #to_cli_trait_block
 
-                impl #name {
-                    #(#vec_fn_input_arg)*
-                }
+                #input_args_impl_block
 
                 #context_scope_for_struct
 
@@ -235,6 +233,9 @@ pub(crate) mod common_methods;
 mod structs {
     #[doc = include_str!("../../../docs/structs_to_cli_trait_docstring.md")]
     pub mod to_cli_trait;
+
+    #[doc = include_str!("../../../docs/structs_input_args_impl_docstring.md")]
+    pub mod input_args_impl;
 
     #[doc = include_str!("../../../docs/structs_from_cli_trait_docstring.md")]
     pub mod from_cli_trait;

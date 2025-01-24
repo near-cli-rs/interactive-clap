@@ -4,17 +4,27 @@ use proc_macro2::Span;
 use quote::quote;
 use syn;
 
-pub fn vec_fn_input_arg(
-    ast: &syn::DeriveInput,
-    fields: &syn::Fields,
-) -> Vec<proc_macro2::TokenStream> {
+use crate::derives::interactive_clap::common_methods;
+
+/// returns the whole result `TokenStream` of derive logic of containing module
+pub fn token_stream(ast: &syn::DeriveInput, fields: &syn::Fields) -> proc_macro2::TokenStream {
+    let name = &ast.ident;
+    let vec_fn_input_arg = vec_fn_input_arg(ast, &fields);
+    quote! {
+        impl #name {
+            #(#vec_fn_input_arg)*
+        }
+    }
+}
+
+fn vec_fn_input_arg(ast: &syn::DeriveInput, fields: &syn::Fields) -> Vec<proc_macro2::TokenStream> {
     let interactive_clap_attrs_context =
-        super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(ast);
+        common_methods::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(ast);
     let vec_fn_input_arg = fields
         .iter()
-        .filter(|field| !super::fields_with_subcommand::is_field_with_subcommand(field))
+        .filter(|field| !common_methods::fields_with_subcommand::is_field_with_subcommand(field))
         .filter(|field| {
-            !super::fields_with_skip_default_input_arg::is_field_with_skip_default_input_arg(
+            !common_methods::fields_with_skip_default_input_arg::is_field_with_skip_default_input_arg(
                 field,
             )
         })
@@ -44,7 +54,7 @@ pub fn vec_fn_input_arg(
                 };
             }
 
-            if super::skip_interactive_input::is_skip_interactive_input(field) {
+            if common_methods::skip_interactive_input::is_skip_interactive_input(field) {
                 return quote! {};
             }
 

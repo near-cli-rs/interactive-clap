@@ -1,3 +1,5 @@
+`interactive_clap::ToCli` derive
+
 This module describes the derive logic of `#cli_name` struct used as `CliVariant` in
 implementation of `interactive_clap::ToCli`, which happens during derive of [`crate::InteractiveClap`] for `#name` struct.
 
