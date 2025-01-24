@@ -4,7 +4,7 @@ use proc_macro2::Span;
 use quote::quote;
 use syn;
 
-use super::common_methods as structs_methods;
+use super::common_field_methods as field_methods;
 use crate::derives::interactive_clap::common_methods;
 
 /// returns the whole result `TokenStream` of derive logic of containing module
@@ -23,7 +23,7 @@ fn vec_fn_input_arg(ast: &syn::DeriveInput, fields: &syn::Fields) -> Vec<proc_ma
         common_methods::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(ast);
     let vec_fn_input_arg = fields
         .iter()
-        .filter(|field| !structs_methods::is_field_with_subcommand::predicate(field))
+        .filter(|field| !field_methods::with_subcommand::predicate(field))
         .filter(|field| {
             !common_methods::fields_with_skip_default_input_arg::is_field_with_skip_default_input_arg(
                 field,
@@ -55,7 +55,7 @@ fn vec_fn_input_arg(ast: &syn::DeriveInput, fields: &syn::Fields) -> Vec<proc_ma
                 };
             }
 
-            if common_methods::skip_interactive_input::is_skip_interactive_input(field) {
+            if field_methods::with_skip_interactive_input::predicate(field) {
                 return quote! {};
             }
 

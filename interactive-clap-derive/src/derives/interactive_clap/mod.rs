@@ -240,7 +240,7 @@ mod structs {
     #[doc = include_str!("../../../docs/structs_from_cli_trait_docstring.md")]
     pub mod from_cli_trait;
 
-    pub(super) mod common_methods;
+    pub(super) mod common_field_methods;
 }
 
 fn context_scope_for_struct(
@@ -264,8 +264,8 @@ fn context_scope_for_struct(
 fn context_scope_for_struct_field(field: &syn::Field) -> proc_macro2::TokenStream {
     let ident_field = &field.ident.clone().expect("this field does not exist");
     let ty = &field.ty;
-    if !self::structs::common_methods::is_field_with_subcommand::predicate(field)
-        && !self::structs::common_methods::is_field_with_subargs::predicate(field)
+    if !self::structs::common_field_methods::with_subcommand::predicate(field)
+        && !self::structs::common_field_methods::with_subargs::predicate(field)
     {
         quote! {
             pub #ident_field: #ty

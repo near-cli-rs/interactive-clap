@@ -5,7 +5,7 @@ use proc_macro_error::abort_call_site;
 use quote::{quote, ToTokens};
 use syn;
 
-use super::common_methods as structs_methods;
+use super::common_field_methods as field_methods;
 use crate::derives::interactive_clap::common_methods;
 
 /// returns the whole result `TokenStream` of derive logic of containing module
@@ -21,8 +21,8 @@ pub fn token_stream(ast: &syn::DeriveInput, fields: &syn::Fields) -> proc_macro2
     let fields_without_subcommand_and_subargs = fields
         .iter()
         .filter(|field| {
-            !structs_methods::is_field_with_subcommand::predicate(field)
-                && !structs_methods::is_field_with_subargs::predicate(field)
+            !field_methods::with_subcommand::predicate(field)
+                && !field_methods::with_subargs::predicate(field)
         })
         .map(|field| {
             let ident_field = &field.clone().ident.expect("this field does not exist");
@@ -103,7 +103,7 @@ fn fields_value(field: &syn::Field) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
     let fn_input_arg = syn::Ident::new(&format!("input_{}", &ident_field), Span::call_site());
     if field.ty.to_token_stream().to_string() == "bool"
-        || common_methods::skip_interactive_input::is_skip_interactive_input(field)
+        || field_methods::with_skip_interactive_input::predicate(field)
     {
         quote! {
             let #ident_field = clap_variant.#ident_field.clone();
@@ -124,8 +124,8 @@ fn fields_value(field: &syn::Field) -> proc_macro2::TokenStream {
             };
             let #ident_field = clap_variant.#ident_field.clone();
         }
-    } else if !structs_methods::is_field_with_subcommand::predicate(field)
-        && !structs_methods::is_field_with_subargs::predicate(field)
+    } else if !field_methods::with_subcommand::predicate(field)
+        && !field_methods::with_subargs::predicate(field)
     {
         quote! {
             if clap_variant.#ident_field.is_none() {
