@@ -18,6 +18,20 @@ fn test_simple_struct() {
 }
 
 #[test]
+fn test_simple_struct_with_named_arg() {
+    let input = syn::parse_quote! {
+        struct Account {
+            #[interactive_clap(named_arg)]
+            ///Specify a sender
+            account: Sender,
+        }
+    };
+
+    let interactive_clap_codegen = crate::derives::interactive_clap::impl_interactive_clap(&input);
+    insta::assert_snapshot!(pretty_codegen(&interactive_clap_codegen));
+}
+
+#[test]
 fn test_flag() {
     let input = syn::parse_quote! {
         struct Args {
