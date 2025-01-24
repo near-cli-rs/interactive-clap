@@ -10,7 +10,7 @@ use crate::derives::interactive_clap::common_methods;
 /// returns the whole result `TokenStream` of derive logic of containing module
 pub fn token_stream(ast: &syn::DeriveInput, fields: &syn::Fields) -> proc_macro2::TokenStream {
     let name = &ast.ident;
-    let vec_fn_input_arg = vec_fn_input_arg(ast, &fields);
+    let vec_fn_input_arg = vec_fn_input_arg(ast, fields);
     quote! {
         impl #name {
             #(#vec_fn_input_arg)*

@@ -181,19 +181,18 @@ mod structs {
         ast: &syn::DeriveInput,
         fields: &syn::Fields,
     ) -> proc_macro2::TokenStream {
-        let to_cli_trait_block = to_cli_trait::token_stream(name, cli_name, &fields);
-        let from_cli_trait_block = from_cli_trait::token_stream(ast, &fields);
-        let input_args_impl_block = input_args_impl::token_stream(ast, &fields);
-        let to_interactive_clap_context_scope_trait_block =
-            to_interactive_clap_context_scope_trait::token_stream(ast, &fields);
-        let clap_for_named_arg_enum_block = clap_for_named_arg_enum::token_stream(ast, &fields);
+        let b1 = to_cli_trait::token_stream(name, cli_name, fields);
+        let b2 = input_args_impl::token_stream(ast, fields);
+        let b3 = to_interactive_clap_context_scope_trait::token_stream(ast, fields);
+        let b4 = from_cli_trait::token_stream(ast, fields);
+        let b5 = clap_for_named_arg_enum::token_stream(ast, fields);
 
         quote::quote! {
-            #to_cli_trait_block
-            #input_args_impl_block
-            #to_interactive_clap_context_scope_trait_block
-            #from_cli_trait_block
-            #clap_for_named_arg_enum_block
+            #b1
+            #b2
+            #b3
+            #b4
+            #b5
         }
     }
 

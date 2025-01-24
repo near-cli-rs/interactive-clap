@@ -112,13 +112,25 @@ fn test_doc_comments_propagate() {
             ///
             /// a longer paragraph, describing the usage and stuff with first field's
             /// awarenes of its possible applications
+            #[interactive_clap(long)]
+            #[interactive_clap(skip_interactive_input)]
             first_field: u64,
             /// short second field description
             ///
             /// a longer paragraph, describing the usage and stuff with second field's
             /// awareness of its possible applications
+            #[interactive_clap(long)]
+            #[interactive_clap(skip_interactive_input)]
             #[interactive_clap(verbatim_doc_comment)]
             second_field: String,
+            /// short third field description
+            ///
+            /// a longer paragraph, describing the usage and stuff with third field's
+            /// awareness of its possible applications
+            #[interactive_clap(long)]
+            #[interactive_clap(skip_interactive_input)]
+            #[interactive_clap(verbatim_doc_comment)]
+            third_field: bool,
         }
     };
 
