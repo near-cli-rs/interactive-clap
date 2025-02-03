@@ -18,7 +18,12 @@ impl InteractiveClapAttrsCliField {
         let mut named_args = quote!();
         let mut unnamed_args = quote!();
 
-        if field.attrs.is_empty() {
+        if !field.attrs.iter().any(|attr| attr.path.is_ident("clap")) {
+            // BUGFIX: changed when this branch is being taken
+            // from: field attributes are empty
+            // to: there're no field attributes with `clap` identificator
+            //
+            // in order to allow `doc` attributes
             args_without_attrs = quote! {
                 if let Some(arg) = &self.#ident_field {
                     args.push_front(arg.to_string())
