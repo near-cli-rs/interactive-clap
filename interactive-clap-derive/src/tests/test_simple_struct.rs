@@ -45,6 +45,7 @@ fn test_bug_fix_of_to_cli_args_derive() {
 
     let input = syn::parse_quote! {
         pub struct CliViewAccountSummary {
+            /// What Account ID do you need to view?
             pub account_id: Option<
                 <crate::types::account_id::AccountId as interactive_clap::ToCli>::CliVariant,
             >,
