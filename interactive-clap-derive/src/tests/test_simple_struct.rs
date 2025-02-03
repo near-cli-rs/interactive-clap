@@ -32,6 +32,30 @@ fn test_simple_struct_with_named_arg() {
 }
 
 #[test]
+fn test_bug_fix_of_to_cli_args_derive() {
+    let input = syn::parse_quote! {
+        pub struct ViewAccountSummary {
+            /// What Account ID do you need to view?
+            account_id: crate::types::account_id::AccountId,
+        }
+    };
+
+    let interactive_clap_codegen = crate::derives::interactive_clap::impl_interactive_clap(&input);
+    insta::assert_snapshot!(pretty_codegen(&interactive_clap_codegen));
+
+    let input = syn::parse_quote! {
+        pub struct CliViewAccountSummary {
+            pub account_id: Option<
+                <crate::types::account_id::AccountId as interactive_clap::ToCli>::CliVariant,
+            >,
+        }
+    };
+
+    let to_cli_args_codegen = crate::derives::to_cli_args::impl_to_cli_args(&input);
+    insta::assert_snapshot!(pretty_codegen(&to_cli_args_codegen));
+}
+
+#[test]
 fn test_flag() {
     let input = syn::parse_quote! {
         struct Args {

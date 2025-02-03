@@ -1,0 +1,13 @@
+---
+source: interactive-clap-derive/src/tests/test_simple_struct.rs
+expression: pretty_codegen(&to_cli_args_codegen)
+---
+impl interactive_clap::ToCliArgs for CliViewAccountSummary {
+    fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        let mut args = std::collections::VecDeque::new();
+        if let Some(arg) = &self.account_id {
+            args.push_front(arg.to_string())
+        }
+        args
+    }
+}
