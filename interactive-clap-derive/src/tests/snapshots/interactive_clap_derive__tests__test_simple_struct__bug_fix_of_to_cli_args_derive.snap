@@ -5,12 +5,53 @@ expression: pretty_codegen(&interactive_clap_codegen)
 #[derive(Debug, Default, Clone, clap::Parser, interactive_clap::ToCliArgs)]
 #[clap(author, version, about, long_about = None)]
 pub struct CliViewAccountSummary {
+    /// What Account ID do you need to view?
     pub account_id: Option<
         <crate::types::account_id::AccountId as interactive_clap::ToCli>::CliVariant,
     >,
 }
 impl interactive_clap::ToCli for ViewAccountSummary {
     type CliVariant = CliViewAccountSummary;
+}
+impl ViewAccountSummary {
+    pub fn try_parse() -> Result<CliViewAccountSummary, clap::Error> {
+        <CliViewAccountSummary as clap::Parser>::try_parse()
+    }
+    pub fn parse() -> CliViewAccountSummary {
+        <CliViewAccountSummary as clap::Parser>::parse()
+    }
+    pub fn try_parse_from<I, T>(itr: I) -> Result<CliViewAccountSummary, clap::Error>
+    where
+        I: ::std::iter::IntoIterator<Item = T>,
+        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
+    {
+        <CliViewAccountSummary as clap::Parser>::try_parse_from(itr)
+    }
+}
+impl From<ViewAccountSummary> for CliViewAccountSummary {
+    fn from(args: ViewAccountSummary) -> Self {
+        Self {
+            account_id: Some(args.account_id.into()),
+        }
+    }
+}
+impl ViewAccountSummary {
+    fn input_account_id(
+        _context: &(),
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        match inquire::CustomType::new(
+                concat!(r" What Account ID do you need to view?",).trim(),
+            )
+            .prompt()
+        {
+            Ok(value) => Ok(Some(value)),
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => Ok(None),
+            Err(err) => Err(err.into()),
+        }
+    }
 }
 pub struct InteractiveClapContextScopeForViewAccountSummary {
     pub account_id: crate::types::account_id::AccountId,
@@ -49,43 +90,5 @@ impl interactive_clap::FromCli for ViewAccountSummary {
             account_id: account_id.into(),
         };
         interactive_clap::ResultFromCli::Ok(clap_variant)
-    }
-}
-impl ViewAccountSummary {
-    fn input_account_id(
-        _context: &(),
-    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        match inquire::CustomType::new(
-                concat!(r" What Account ID do you need to view?",).trim(),
-            )
-            .prompt()
-        {
-            Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
-            Err(err) => Err(err.into()),
-        }
-    }
-    pub fn try_parse() -> Result<CliViewAccountSummary, clap::Error> {
-        <CliViewAccountSummary as clap::Parser>::try_parse()
-    }
-    pub fn parse() -> CliViewAccountSummary {
-        <CliViewAccountSummary as clap::Parser>::parse()
-    }
-    pub fn try_parse_from<I, T>(itr: I) -> Result<CliViewAccountSummary, clap::Error>
-    where
-        I: ::std::iter::IntoIterator<Item = T>,
-        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
-    {
-        <CliViewAccountSummary as clap::Parser>::try_parse_from(itr)
-    }
-}
-impl From<ViewAccountSummary> for CliViewAccountSummary {
-    fn from(args: ViewAccountSummary) -> Self {
-        Self {
-            account_id: Some(args.account_id.into()),
-        }
     }
 }
