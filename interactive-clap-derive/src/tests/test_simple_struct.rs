@@ -26,18 +26,26 @@ fn test_simple_struct() {
 }
 
 #[test]
-#[ignore]
 fn test_simple_struct_with_named_arg() {
     let input = syn::parse_quote! {
         struct Account {
             #[interactive_clap(named_arg)]
-            ///Specify a sender
             field_name: Sender,
         }
     };
 
     let interactive_clap_codegen = crate::derives::interactive_clap::impl_interactive_clap(&input);
     insta::assert_snapshot!(pretty_codegen(&interactive_clap_codegen));
+
+    let step_one_output = syn::parse_quote! {
+        pub struct CliAccount {
+            #[clap(subcommand)]
+            pub field_name: Option<ClapNamedArgSenderForAccount>,
+        }
+    };
+
+    let to_cli_args_codegen = crate::derives::to_cli_args::impl_to_cli_args(&step_one_output);
+    insta::assert_snapshot!(pretty_codegen(&to_cli_args_codegen));
 }
 
 /// this tested this problem https://github.com/near/near-cli-rs/pull/444#issuecomment-2631866217
