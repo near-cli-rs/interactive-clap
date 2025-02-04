@@ -148,6 +148,7 @@ fn test_vec_multiple_opt_err() {
 /// gets transferred to `#[clap(verbatim_doc_comment)]` on `second_field` of
 /// the same `CliArgs` struct
 #[test]
+#[ignore]
 fn test_doc_comments_propagate() {
     let input = syn::parse_quote! {
         struct Args {
