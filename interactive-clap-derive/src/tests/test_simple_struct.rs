@@ -39,6 +39,7 @@ fn test_simple_struct_with_named_arg() {
     insta::assert_snapshot!(pretty_codegen(&interactive_clap_codegen));
 }
 
+/// this tested this problem https://github.com/near/near-cli-rs/pull/444#issuecomment-2631866217
 #[test]
 fn test_bug_fix_of_to_cli_args_derive() {
     let input = syn::parse_quote! {
