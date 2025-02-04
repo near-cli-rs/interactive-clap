@@ -148,7 +148,6 @@ fn test_vec_multiple_opt_err() {
 /// gets transferred to `#[clap(verbatim_doc_comment)]` on `second_field` of
 /// the same `CliArgs` struct
 #[test]
-#[ignore]
 fn test_doc_comments_propagate() {
     let input = syn::parse_quote! {
         struct Args {
@@ -180,4 +179,18 @@ fn test_doc_comments_propagate() {
 
     let interactive_clap_codegen = crate::derives::interactive_clap::impl_interactive_clap(&input);
     insta::assert_snapshot!(pretty_codegen(&interactive_clap_codegen));
+
+    let step_one_output = syn::parse_quote! {
+        pub struct CliArgs {
+            #[clap(long)]
+            pub first_field: Option<<u64 as interactive_clap::ToCli>::CliVariant>,
+            #[clap(long)]
+            pub second_field: Option<<String as interactive_clap::ToCli>::CliVariant>,
+            #[clap(long)]
+            pub third_field: bool,
+        }
+    };
+
+    let to_cli_args_codegen = crate::derives::to_cli_args::impl_to_cli_args(&step_one_output);
+    insta::assert_snapshot!(pretty_codegen(&to_cli_args_codegen));
 }
