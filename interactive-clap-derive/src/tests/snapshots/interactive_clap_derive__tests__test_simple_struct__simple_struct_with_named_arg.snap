@@ -11,6 +11,29 @@ pub struct CliAccount {
 impl interactive_clap::ToCli for Account {
     type CliVariant = CliAccount;
 }
+impl Account {
+    pub fn try_parse() -> Result<CliAccount, clap::Error> {
+        <CliAccount as clap::Parser>::try_parse()
+    }
+    pub fn parse() -> CliAccount {
+        <CliAccount as clap::Parser>::parse()
+    }
+    pub fn try_parse_from<I, T>(itr: I) -> Result<CliAccount, clap::Error>
+    where
+        I: ::std::iter::IntoIterator<Item = T>,
+        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
+    {
+        <CliAccount as clap::Parser>::try_parse_from(itr)
+    }
+}
+impl From<Account> for CliAccount {
+    fn from(args: Account) -> Self {
+        Self {
+            field_name: Some(args.field_name.into()),
+        }
+    }
+}
+impl Account {}
 pub struct InteractiveClapContextScopeForAccount {}
 impl interactive_clap::ToInteractiveClapContextScope for Account {
     type InteractiveClapContextScope = InteractiveClapContextScopeForAccount;
@@ -62,28 +85,6 @@ impl interactive_clap::FromCli for Account {
             }
         };
         interactive_clap::ResultFromCli::Ok(clap_variant)
-    }
-}
-impl Account {
-    pub fn try_parse() -> Result<CliAccount, clap::Error> {
-        <CliAccount as clap::Parser>::try_parse()
-    }
-    pub fn parse() -> CliAccount {
-        <CliAccount as clap::Parser>::parse()
-    }
-    pub fn try_parse_from<I, T>(itr: I) -> Result<CliAccount, clap::Error>
-    where
-        I: ::std::iter::IntoIterator<Item = T>,
-        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
-    {
-        <CliAccount as clap::Parser>::try_parse_from(itr)
-    }
-}
-impl From<Account> for CliAccount {
-    fn from(args: Account) -> Self {
-        Self {
-            field_name: Some(args.field_name.into()),
-        }
     }
 }
 #[derive(Debug, Clone, clap::Parser, interactive_clap_derive::ToCliArgs)]
