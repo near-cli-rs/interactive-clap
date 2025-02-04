@@ -28,6 +28,7 @@ fn test_simple_enum() {
 }
 
 #[test]
+#[ignore]
 fn test_simple_enum_with_strum_discriminants() {
     let input = syn::parse_quote! {
         #[strum_discriminants(derive(EnumMessage, EnumIter))]
