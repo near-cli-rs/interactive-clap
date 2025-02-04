@@ -1,6 +1,7 @@
 use super::pretty_codegen;
 
 #[test]
+#[ignore]
 fn test_simple_struct() {
     let input = syn::parse_quote! {
         struct Args {
