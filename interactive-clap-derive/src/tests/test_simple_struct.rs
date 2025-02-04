@@ -1,7 +1,6 @@
 use super::pretty_codegen;
 
 #[test]
-#[ignore]
 fn test_simple_struct() {
     let input = syn::parse_quote! {
         struct Args {
@@ -14,7 +13,15 @@ fn test_simple_struct() {
     let interactive_clap_codegen = crate::derives::interactive_clap::impl_interactive_clap(&input);
     insta::assert_snapshot!(pretty_codegen(&interactive_clap_codegen));
 
-    let to_cli_args_codegen = crate::derives::to_cli_args::impl_to_cli_args(&input);
+    let step_one_output = syn::parse_quote! {
+        pub struct CliArgs {
+            pub age: Option<<u64 as interactive_clap::ToCli>::CliVariant>,
+            pub first_name: Option<<String as interactive_clap::ToCli>::CliVariant>,
+            pub second_name: Option<<String as interactive_clap::ToCli>::CliVariant>,
+        }
+    };
+
+    let to_cli_args_codegen = crate::derives::to_cli_args::impl_to_cli_args(&step_one_output);
     insta::assert_snapshot!(pretty_codegen(&to_cli_args_codegen));
 }
 
