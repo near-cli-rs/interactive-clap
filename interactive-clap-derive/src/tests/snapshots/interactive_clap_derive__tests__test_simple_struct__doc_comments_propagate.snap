@@ -5,16 +5,53 @@ expression: pretty_codegen(&interactive_clap_codegen)
 #[derive(Debug, Default, Clone, clap::Parser, interactive_clap::ToCliArgs)]
 #[clap(author, version, about, long_about = None)]
 pub struct CliArgs {
+    /// short first field description
+    ///
+    /// a longer paragraph, describing the usage and stuff with first field's
+    /// awarenes of its possible applications
     #[clap(long)]
     pub first_field: Option<<u64 as interactive_clap::ToCli>::CliVariant>,
-    #[clap(long)]
+    /// short second field description
+    ///
+    /// a longer paragraph, describing the usage and stuff with second field's
+    /// awareness of its possible applications
+    #[clap(long, verbatim_doc_comment)]
     pub second_field: Option<<String as interactive_clap::ToCli>::CliVariant>,
-    #[clap(long)]
+    /// short third field description
+    ///
+    /// a longer paragraph, describing the usage and stuff with third field's
+    /// awareness of its possible applications
+    #[clap(long, verbatim_doc_comment)]
     pub third_field: bool,
 }
 impl interactive_clap::ToCli for Args {
     type CliVariant = CliArgs;
 }
+impl Args {
+    pub fn try_parse() -> Result<CliArgs, clap::Error> {
+        <CliArgs as clap::Parser>::try_parse()
+    }
+    pub fn parse() -> CliArgs {
+        <CliArgs as clap::Parser>::parse()
+    }
+    pub fn try_parse_from<I, T>(itr: I) -> Result<CliArgs, clap::Error>
+    where
+        I: ::std::iter::IntoIterator<Item = T>,
+        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
+    {
+        <CliArgs as clap::Parser>::try_parse_from(itr)
+    }
+}
+impl From<Args> for CliArgs {
+    fn from(args: Args) -> Self {
+        Self {
+            first_field: Some(args.first_field.into()),
+            second_field: Some(args.second_field.into()),
+            third_field: args.third_field.into(),
+        }
+    }
+}
+impl Args {}
 pub struct InteractiveClapContextScopeForArgs {
     pub first_field: u64,
     pub second_field: String,
@@ -46,29 +83,5 @@ impl interactive_clap::FromCli for Args {
             third_field: third_field.into(),
         };
         interactive_clap::ResultFromCli::Ok(clap_variant)
-    }
-}
-impl Args {
-    pub fn try_parse() -> Result<CliArgs, clap::Error> {
-        <CliArgs as clap::Parser>::try_parse()
-    }
-    pub fn parse() -> CliArgs {
-        <CliArgs as clap::Parser>::parse()
-    }
-    pub fn try_parse_from<I, T>(itr: I) -> Result<CliArgs, clap::Error>
-    where
-        I: ::std::iter::IntoIterator<Item = T>,
-        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
-    {
-        <CliArgs as clap::Parser>::try_parse_from(itr)
-    }
-}
-impl From<Args> for CliArgs {
-    fn from(args: Args) -> Self {
-        Self {
-            first_field: Some(args.first_field.into()),
-            second_field: Some(args.second_field.into()),
-            third_field: args.third_field.into(),
-        }
     }
 }

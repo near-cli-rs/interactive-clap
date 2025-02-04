@@ -182,11 +182,23 @@ fn test_doc_comments_propagate() {
 
     let step_one_output = syn::parse_quote! {
         pub struct CliArgs {
+            /// short first field description
+            ///
+            /// a longer paragraph, describing the usage and stuff with first field's
+            /// awarenes of its possible applications
             #[clap(long)]
             pub first_field: Option<<u64 as interactive_clap::ToCli>::CliVariant>,
-            #[clap(long)]
+            /// short second field description
+            ///
+            /// a longer paragraph, describing the usage and stuff with second field's
+            /// awareness of its possible applications
+            #[clap(long, verbatim_doc_comment)]
             pub second_field: Option<<String as interactive_clap::ToCli>::CliVariant>,
-            #[clap(long)]
+            /// short third field description
+            ///
+            /// a longer paragraph, describing the usage and stuff with third field's
+            /// awareness of its possible applications
+            #[clap(long, verbatim_doc_comment)]
             pub third_field: bool,
         }
     };
