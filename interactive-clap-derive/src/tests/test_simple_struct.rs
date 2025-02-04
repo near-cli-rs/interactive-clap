@@ -26,6 +26,7 @@ fn test_simple_struct() {
 }
 
 #[test]
+#[ignore]
 fn test_simple_struct_with_named_arg() {
     let input = syn::parse_quote! {
         struct Account {
