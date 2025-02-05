@@ -27,7 +27,7 @@ pub fn token_stream(
 }
 
 /// describes derive of `#cli_name` struct based on input `#name` struct
-mod cli_variant_struct;
+pub(crate) mod cli_variant_struct;
 
 /// describes logic of derive of [`clap::Parser`](https://docs.rs/clap/4.5.24/clap/trait.Parser.html) adapter
 /// for `#name` struct, which returns instances of `#cli_name` struct

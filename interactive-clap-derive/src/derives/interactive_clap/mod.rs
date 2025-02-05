@@ -5,17 +5,55 @@ use proc_macro_error::abort_call_site;
 use quote::{quote, ToTokens};
 use syn;
 
-pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
+#[cfg(test)]
+pub(crate) mod to_cli_args_structs_test_bridge {
+    struct Opts {
+        name: syn::Ident,
+        cli_name: syn::Ident,
+        input_fields: syn::Fields,
+    }
+    fn prepare(ast: &syn::DeriveInput) -> Opts {
+        let (name, cli_name) = super::get_names(ast);
+        let input_fields = match &ast.data {
+            syn::Data::Struct(data_struct) => data_struct.fields.clone(),
+            syn::Data::Enum(..) | syn::Data::Union(..) => {
+                unreachable!("stuct DeriveInput expected");
+            }
+        };
+        Opts {
+            name: name.clone(),
+            cli_name,
+            input_fields,
+        }
+    }
+
+    pub fn partial_output(ast: &syn::DeriveInput) -> syn::Result<syn::DeriveInput> {
+        let opts = prepare(ast);
+
+        let (token_stream, _unused_byproduct) =
+            super::structs::to_cli_trait::cli_variant_struct::token_stream(
+                &opts.name,
+                &opts.cli_name,
+                &opts.input_fields,
+            );
+        syn::parse2(token_stream)
+    }
+}
+
+fn get_names(ast: &syn::DeriveInput) -> (&syn::Ident, syn::Ident) {
     let name = &ast.ident;
     let cli_name = {
         let cli_name_string = format!("Cli{}", name);
-        &syn::Ident::new(&cli_name_string, Span::call_site())
+        syn::Ident::new(&cli_name_string, Span::call_site())
     };
+    (name, cli_name)
+}
+
+pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
+    let (name, cli_name) = get_names(ast);
     match &ast.data {
         syn::Data::Struct(data_struct) => {
-            let fields = data_struct.fields.clone();
-
-            self::structs::token_stream(name, cli_name, ast, &fields)
+            self::structs::token_stream(name, &cli_name, ast, &data_struct.fields)
         }
         syn::Data::Enum(syn::DataEnum { variants, .. }) => {
             let enum_variants = variants.iter().map(|variant| {
@@ -173,7 +211,7 @@ quote::quote! {
 }
 ```
 */
-mod structs {
+pub(crate) mod structs {
     /// returns the whole result `TokenStream` of derive logic of containing module
     pub fn token_stream(
         name: &syn::Ident,
@@ -197,7 +235,7 @@ mod structs {
     }
 
     #[doc = include_str!("../../../docs/structs_to_cli_trait_docstring.md")]
-    mod to_cli_trait;
+    pub(crate) mod to_cli_trait;
 
     #[doc = include_str!("../../../docs/structs_input_args_impl_docstring.md")]
     mod input_args_impl;
