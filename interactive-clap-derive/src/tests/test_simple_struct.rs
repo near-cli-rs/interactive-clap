@@ -61,7 +61,7 @@ fn test_bug_fix_of_to_cli_args_derive() {
     let interactive_clap_codegen = crate::derives::interactive_clap::impl_interactive_clap(&input);
     insta::assert_snapshot!(pretty_codegen(&interactive_clap_codegen));
 
-    let input = syn::parse_quote! {
+    let step_one_output = syn::parse_quote! {
         pub struct CliViewAccountSummary {
             /// What Account ID do you need to view?
             pub account_id: Option<
@@ -70,7 +70,7 @@ fn test_bug_fix_of_to_cli_args_derive() {
         }
     };
 
-    let to_cli_args_codegen = crate::derives::to_cli_args::impl_to_cli_args(&input);
+    let to_cli_args_codegen = crate::derives::to_cli_args::impl_to_cli_args(&step_one_output);
     insta::assert_snapshot!(pretty_codegen(&to_cli_args_codegen));
 }
 
@@ -87,15 +87,15 @@ fn test_flag() {
     let interactive_clap_codegen = crate::derives::interactive_clap::impl_interactive_clap(&input);
     insta::assert_snapshot!(pretty_codegen(&interactive_clap_codegen));
 
-    let input = syn::parse_quote! {
-        struct CliArgs {
+    let step_one_output = syn::parse_quote! {
+        pub struct CliArgs {
             /// Offline mode
             #[clap(long)]
-            offline: bool
+            pub offline: bool,
         }
     };
 
-    let to_cli_args_codegen = crate::derives::to_cli_args::impl_to_cli_args(&input);
+    let to_cli_args_codegen = crate::derives::to_cli_args::impl_to_cli_args(&step_one_output);
     insta::assert_snapshot!(pretty_codegen(&to_cli_args_codegen));
 }
 
@@ -114,14 +114,14 @@ fn test_vec_multiple_opt() {
 
 #[test]
 fn test_vec_multiple_opt_to_cli_args() {
-    let input = syn::parse_quote! {
+    let step_one_output = syn::parse_quote! {
         pub struct CliArgs {
             #[clap(long)]
             pub env: Vec<String>,
         }
     };
 
-    let to_cli_args_codegen = crate::derives::to_cli_args::impl_to_cli_args(&input);
+    let to_cli_args_codegen = crate::derives::to_cli_args::impl_to_cli_args(&step_one_output);
     insta::assert_snapshot!(pretty_codegen(&to_cli_args_codegen));
 }
 
