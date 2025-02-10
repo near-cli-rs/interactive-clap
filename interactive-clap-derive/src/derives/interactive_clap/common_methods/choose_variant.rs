@@ -20,9 +20,8 @@ pub fn fn_choose_variant(
     let mut ast_attrs: Vec<&str> = std::vec::Vec::new();
 
     if !ast.attrs.is_empty() {
-        #[allow(clippy::unused_enumerate_index)]
         for (_index, attr) in ast.attrs.clone().into_iter().enumerate() {
-            dbg_cond!(_index, &attr);
+            dbg_cond!((_index, &attr));
             if attr.path.is_ident("interactive_clap") {
                 for attr_token in attr.tokens.clone() {
                     if let proc_macro2::TokenTree::Group(group) = attr_token {

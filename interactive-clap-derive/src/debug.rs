@@ -1,7 +1,7 @@
 #[cfg(feature = "introspect")]
 macro_rules! dbg_cond {
-    ($($val:expr),* ) => {
-        dbg!($($val),*)
+    ($val:expr) => {
+        dbg!($val)
     };
 }
 
@@ -16,7 +16,8 @@ macro_rules! dbg_cond {
 /// ```
 #[cfg(not(feature = "introspect"))]
 macro_rules! dbg_cond {
-    ($($val:expr),*) => {
-        // no-op
+    ($val:expr) => {
+        #[allow(unused)]
+        $val
     };
 }

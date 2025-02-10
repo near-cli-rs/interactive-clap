@@ -21,7 +21,7 @@ syn = "1"
 [dev-dependencies]
 prettyplease = "0.1"
 insta = "1"
-syn = { version = "1", features = ["full"] }
+syn = { version = "1", features = ["full", "extra-traits"] }
 
 [package.metadata.docs.rs]
 # Additional `RUSTDOCFLAGS` to set (default: [])
