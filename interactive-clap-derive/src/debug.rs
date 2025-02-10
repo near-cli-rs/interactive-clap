@@ -18,6 +18,7 @@ macro_rules! dbg_cond {
 macro_rules! dbg_cond {
     ($val:expr) => {
         #[allow(unused)]
+        #[allow(clippy::no_effect)]
         $val
     };
 }
