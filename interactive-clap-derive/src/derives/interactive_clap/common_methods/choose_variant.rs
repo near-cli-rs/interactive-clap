@@ -35,8 +35,12 @@ pub fn fn_choose_variant(
             if attr.path.is_ident("strum_discriminants") {
                 for attr_token in attr.tokens.clone() {
                     if let proc_macro2::TokenTree::Group(group) = attr_token {
-                        let group_stream_no_whitespace =
-                            group.stream().to_string().replace(" ", "");
+                        let group_stream_no_whitespace = group
+                            .stream()
+                            .to_string()
+                            .split_whitespace()
+                            .collect::<Vec<_>>()
+                            .join("");
                         dbg_cond!(&group_stream_no_whitespace);
                         if &group_stream_no_whitespace == "derive(EnumMessage,EnumIter)" {
                             ast_attrs.push("strum_discriminants");
