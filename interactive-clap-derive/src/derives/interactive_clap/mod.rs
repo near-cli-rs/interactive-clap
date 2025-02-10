@@ -5,40 +5,8 @@ use proc_macro_error::abort_call_site;
 use quote::{quote, ToTokens};
 use syn;
 
-#[cfg(test)]
-pub(crate) mod to_cli_args_structs_test_bridge {
-    struct Opts {
-        name: syn::Ident,
-        cli_name: syn::Ident,
-        input_fields: syn::Fields,
-    }
-    fn prepare(ast: &syn::DeriveInput) -> Opts {
-        let (name, cli_name) = super::get_names(ast);
-        let input_fields = match &ast.data {
-            syn::Data::Struct(data_struct) => data_struct.fields.clone(),
-            syn::Data::Enum(..) | syn::Data::Union(..) => {
-                unreachable!("stuct DeriveInput expected");
-            }
-        };
-        Opts {
-            name: name.clone(),
-            cli_name,
-            input_fields,
-        }
-    }
-
-    pub fn partial_output(ast: &syn::DeriveInput) -> syn::Result<syn::DeriveInput> {
-        let opts = prepare(ast);
-
-        let (token_stream, _unused_byproduct) =
-            super::structs::to_cli_trait::cli_variant_struct::token_stream(
-                &opts.name,
-                &opts.cli_name,
-                &opts.input_fields,
-            );
-        syn::parse2(token_stream)
-    }
-}
+/// these are common methods, reused for both the [structs] and `enums` derives
+pub(super) mod common_methods;
 
 fn get_names(ast: &syn::DeriveInput) -> (&syn::Ident, syn::Ident) {
     let name = &ast.ident;
@@ -192,9 +160,6 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
     }
 }
 
-/// these are common methods, reused for both the [structs] and `enums` derives
-pub(super) mod common_methods;
-
 /** This module describes [`crate::InteractiveClap`] derive logic in case when [`syn::DeriveInput`]
 is a struct
 
@@ -212,6 +177,24 @@ quote::quote! {
 ```
 */
 pub(crate) mod structs {
+    #[doc = include_str!("../../../docs/structs_to_cli_trait_docstring.md")]
+    pub(crate) mod to_cli_trait;
+
+    #[doc = include_str!("../../../docs/structs_input_args_impl_docstring.md")]
+    mod input_args_impl;
+
+    #[doc = include_str!("../../../docs/structs_to_interactive_clap_context_scope_trait_docstring.md")]
+    mod to_interactive_clap_context_scope_trait;
+
+    #[doc = include_str!("../../../docs/structs_from_cli_trait_docstring.md")]
+    mod from_cli_trait;
+
+    #[doc = include_str!("../../../docs/clap_enum_for_named_arg_docstring.md")]
+    mod clap_for_named_arg_enum;
+
+    /// these are common field methods, reused by other [structs](super::structs) submodules
+    pub(super) mod common_field_methods;
+
     /// returns the whole result `TokenStream` of derive logic of containing module
     pub fn token_stream(
         name: &syn::Ident,
@@ -233,24 +216,6 @@ pub(crate) mod structs {
             #b5
         }
     }
-
-    #[doc = include_str!("../../../docs/structs_to_cli_trait_docstring.md")]
-    pub(crate) mod to_cli_trait;
-
-    #[doc = include_str!("../../../docs/structs_input_args_impl_docstring.md")]
-    mod input_args_impl;
-
-    #[doc = include_str!("../../../docs/structs_to_interactive_clap_context_scope_trait_docstring.md")]
-    mod to_interactive_clap_context_scope_trait;
-
-    #[doc = include_str!("../../../docs/structs_from_cli_trait_docstring.md")]
-    mod from_cli_trait;
-
-    #[doc = include_str!("../../../docs/clap_enum_for_named_arg_docstring.md")]
-    mod clap_for_named_arg_enum;
-
-    /// these are common field methods, reused by other [structs](super::structs) submodules
-    pub(super) mod common_field_methods;
 }
 
 fn context_scope_for_enum(name: &syn::Ident) -> proc_macro2::TokenStream {
@@ -264,5 +229,40 @@ fn context_scope_for_enum(name: &syn::Ident) -> proc_macro2::TokenStream {
         impl interactive_clap::ToInteractiveClapContextScope for #name {
                     type InteractiveClapContextScope = #interactive_clap_context_scope_for_enum;
                 }
+    }
+}
+
+#[cfg(test)]
+pub(crate) mod to_cli_args_structs_test_bridge {
+    struct Opts {
+        name: syn::Ident,
+        cli_name: syn::Ident,
+        input_fields: syn::Fields,
+    }
+    fn prepare(ast: &syn::DeriveInput) -> Opts {
+        let (name, cli_name) = super::get_names(ast);
+        let input_fields = match &ast.data {
+            syn::Data::Struct(data_struct) => data_struct.fields.clone(),
+            syn::Data::Enum(..) | syn::Data::Union(..) => {
+                unreachable!("stuct DeriveInput expected");
+            }
+        };
+        Opts {
+            name: name.clone(),
+            cli_name,
+            input_fields,
+        }
+    }
+
+    pub fn partial_output(ast: &syn::DeriveInput) -> syn::Result<syn::DeriveInput> {
+        let opts = prepare(ast);
+
+        let (token_stream, _unused_byproduct) =
+            super::structs::to_cli_trait::cli_variant_struct::token_stream(
+                &opts.name,
+                &opts.cli_name,
+                &opts.input_fields,
+            );
+        syn::parse2(token_stream)
     }
 }
