@@ -177,19 +177,14 @@ quote::quote! {
 ```
 */
 pub(crate) mod structs {
-    #[doc = include_str!("../../../docs/structs_to_cli_trait_docstring.md")]
     pub(crate) mod to_cli_trait;
 
-    #[doc = include_str!("../../../docs/structs_input_args_impl_docstring.md")]
     mod input_args_impl;
 
-    #[doc = include_str!("../../../docs/structs_to_interactive_clap_context_scope_trait_docstring.md")]
     mod to_interactive_clap_context_scope_trait;
 
-    #[doc = include_str!("../../../docs/structs_from_cli_trait_docstring.md")]
     mod from_cli_trait;
 
-    #[doc = include_str!("../../../docs/clap_enum_for_named_arg_docstring.md")]
     mod clap_for_named_arg_enum;
 
     /// these are common field methods, reused by other [structs](super::structs) submodules
