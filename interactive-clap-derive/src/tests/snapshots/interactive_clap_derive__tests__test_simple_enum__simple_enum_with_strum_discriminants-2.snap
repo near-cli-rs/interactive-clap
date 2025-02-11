@@ -1,0 +1,20 @@
+---
+source: interactive-clap-derive/src/tests/test_simple_enum.rs
+expression: pretty_codegen(&to_cli_args_codegen)
+---
+impl interactive_clap::ToCliArgs for CliMode {
+    fn to_cli_args(&self) -> std::collections::VecDeque<String> {
+        match self {
+            Self::Network => {
+                let mut args = std::collections::VecDeque::new();
+                args.push_front("network".to_owned());
+                args
+            }
+            Self::Offline => {
+                let mut args = std::collections::VecDeque::new();
+                args.push_front("offline".to_owned());
+                args
+            }
+        }
+    }
+}

@@ -5,9 +5,24 @@ expression: pretty_codegen(&interactive_clap_codegen)
 #[derive(Debug, Default, Clone, clap::Parser, interactive_clap::ToCliArgs)]
 #[clap(author, version, about, long_about = None)]
 pub struct CliArgs {
-    /// Offline mode
+    /// short first field description
+    ///
+    /// a longer paragraph, describing the usage and stuff with first field's
+    /// awarenes of its possible applications
     #[clap(long)]
-    pub offline: bool,
+    pub first_field: Option<<u64 as interactive_clap::ToCli>::CliVariant>,
+    /// short second field description
+    ///
+    /// a longer paragraph, describing the usage and stuff with second field's
+    /// awareness of its possible applications
+    #[clap(long, verbatim_doc_comment)]
+    pub second_field: Option<<String as interactive_clap::ToCli>::CliVariant>,
+    /// short third field description
+    ///
+    /// a longer paragraph, describing the usage and stuff with third field's
+    /// awareness of its possible applications
+    #[clap(long, verbatim_doc_comment)]
+    pub third_field: bool,
 }
 impl interactive_clap::ToCli for Args {
     type CliVariant = CliArgs;
@@ -30,24 +45,17 @@ impl Args {
 impl From<Args> for CliArgs {
     fn from(args: Args) -> Self {
         Self {
-            offline: args.offline.into(),
+            first_field: Some(args.first_field.into()),
+            second_field: Some(args.second_field.into()),
+            third_field: args.third_field.into(),
         }
     }
 }
-impl Args {
-    fn input_offline(_context: &()) -> color_eyre::eyre::Result<Option<bool>> {
-        match inquire::CustomType::new(concat!(r" Offline mode",).trim()).prompt() {
-            Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
-            Err(err) => Err(err.into()),
-        }
-    }
-}
+impl Args {}
 pub struct InteractiveClapContextScopeForArgs {
-    pub offline: bool,
+    pub first_field: u64,
+    pub second_field: String,
+    pub third_field: bool,
 }
 impl interactive_clap::ToInteractiveClapContextScope for Args {
     type InteractiveClapContextScope = InteractiveClapContextScopeForArgs;
@@ -66,9 +74,13 @@ impl interactive_clap::FromCli for Args {
         Self: Sized + interactive_clap::ToCli,
     {
         let mut clap_variant = optional_clap_variant.clone().unwrap_or_default();
-        let offline = clap_variant.offline.clone();
+        let first_field = clap_variant.first_field.clone();
+        let second_field = clap_variant.second_field.clone();
+        let third_field = clap_variant.third_field.clone();
         let new_context_scope = InteractiveClapContextScopeForArgs {
-            offline: offline.into(),
+            first_field: first_field.into(),
+            second_field: second_field.into(),
+            third_field: third_field.into(),
         };
         interactive_clap::ResultFromCli::Ok(clap_variant)
     }

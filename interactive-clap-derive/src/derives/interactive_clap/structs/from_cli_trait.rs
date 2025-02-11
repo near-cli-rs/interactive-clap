@@ -1,18 +1,89 @@
-extern crate proc_macro;
+/*!
+`interactive_clap::FromCli` derive
 
+This modules describes derive of `interactive_clap::FromCli` trait for `#name` struct,
+which happens during derive of [`crate::InteractiveClap`] for `#name` struct:
+
+The implementation combines usages of all of [super::to_cli_trait], [super::input_args_impl],
+[super::to_interactive_clap_context_scope_trait]
+
+
+derive input `#name`
+
+```rust,ignore
+struct #name {
+    age: u64,
+    first_name: String,
+}
+```
+
+gets transformed
+=>
+
+```rust,ignore
+impl interactive_clap::FromCli for #name {
+    type FromCliContext = ();
+    type FromCliError = color_eyre::eyre::Error;
+    fn from_cli(
+        optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
+        context: Self::FromCliContext,
+    ) -> interactive_clap::ResultFromCli<
+        <Self as interactive_clap::ToCli>::CliVariant,
+        Self::FromCliError,
+    >
+    where
+        Self: Sized + interactive_clap::ToCli,
+    {
+        let mut clap_variant = optional_clap_variant.clone().unwrap_or_default();
+        if clap_variant.age.is_none() {
+            clap_variant
+                .age = match Self::input_age(&context) {
+                Ok(Some(age)) => Some(age),
+                Ok(None) => {
+                    return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
+                }
+                Err(err) => {
+                    return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
+                }
+            };
+        }
+        let age = clap_variant.age.clone().expect("Unexpected error");
+        if clap_variant.first_name.is_none() {
+            clap_variant
+                .first_name = match Self::input_first_name(&context) {
+                Ok(Some(first_name)) => Some(first_name),
+                Ok(None) => {
+                    return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
+                }
+                Err(err) => {
+                    return interactive_clap::ResultFromCli::Err(Some(clap_variant), err);
+                }
+            };
+        }
+        let first_name = clap_variant.first_name.clone().expect("Unexpected error");
+        let new_context_scope = InteractiveClapContextScopeFor#name {
+            age: age.into(),
+            first_name: first_name.into(),
+        };
+        interactive_clap::ResultFromCli::Ok(clap_variant)
+    }
+}
+```
+*/
 use proc_macro2::Span;
 use proc_macro_error::abort_call_site;
 use quote::{quote, ToTokens};
 use syn;
 
-pub fn from_cli_for_struct(
-    ast: &syn::DeriveInput,
-    fields: &syn::Fields,
-) -> proc_macro2::TokenStream {
+use super::common_field_methods as field_methods;
+use crate::derives::interactive_clap::common_methods;
+
+/// returns the whole result `TokenStream` of derive logic of containing module
+pub fn token_stream(ast: &syn::DeriveInput, fields: &syn::Fields) -> proc_macro2::TokenStream {
     let name = &ast.ident;
 
     let interactive_clap_attrs_context =
-        super::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(ast);
+        common_methods::interactive_clap_attrs_context::InteractiveClapAttrsContext::new(ast);
     if interactive_clap_attrs_context.is_skip_default_from_cli {
         return quote!();
     };
@@ -20,8 +91,8 @@ pub fn from_cli_for_struct(
     let fields_without_subcommand_and_subargs = fields
         .iter()
         .filter(|field| {
-            !super::fields_with_subcommand::is_field_with_subcommand(field)
-                && !super::fields_with_subargs::is_field_with_subargs(field)
+            !field_methods::with_subcommand::predicate(field)
+                && !field_methods::with_subargs::predicate(field)
         })
         .map(|field| {
             let ident_field = &field.clone().ident.expect("this field does not exist");
@@ -102,7 +173,7 @@ fn fields_value(field: &syn::Field) -> proc_macro2::TokenStream {
     let ident_field = &field.clone().ident.expect("this field does not exist");
     let fn_input_arg = syn::Ident::new(&format!("input_{}", &ident_field), Span::call_site());
     if field.ty.to_token_stream().to_string() == "bool"
-        || super::skip_interactive_input::is_skip_interactive_input(field)
+        || field_methods::with_skip_interactive_input::predicate(field)
     {
         quote! {
             let #ident_field = clap_variant.#ident_field.clone();
@@ -123,8 +194,8 @@ fn fields_value(field: &syn::Field) -> proc_macro2::TokenStream {
             };
             let #ident_field = clap_variant.#ident_field.clone();
         }
-    } else if !super::fields_with_subcommand::is_field_with_subcommand(field)
-        && !super::fields_with_subargs::is_field_with_subargs(field)
+    } else if !field_methods::with_subcommand::predicate(field)
+        && !field_methods::with_subargs::predicate(field)
     {
         quote! {
             if clap_variant.#ident_field.is_none() {

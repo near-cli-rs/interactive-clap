@@ -1,241 +1,27 @@
 extern crate proc_macro;
 
-use methods::cli_field_type;
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort_call_site;
 use quote::{quote, ToTokens};
 use syn;
 
-use crate::LONG_VEC_MUTLIPLE_OPT;
+/// these are common methods, reused for both the [structs] and `enums` derives
+pub(super) mod common_methods;
 
-pub(crate) mod methods;
+fn get_names(ast: &syn::DeriveInput) -> (&syn::Ident, syn::Ident) {
+    let name = &ast.ident;
+    let cli_name = {
+        let cli_name_string = format!("Cli{}", name);
+        syn::Ident::new(&cli_name_string, Span::call_site())
+    };
+    (name, cli_name)
+}
 
 pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
-    let name = &ast.ident;
-    let cli_name_string = format!("Cli{}", &ast.ident);
-    let cli_name = &syn::Ident::new(&cli_name_string, Span::call_site());
+    let (name, cli_name) = get_names(ast);
     match &ast.data {
         syn::Data::Struct(data_struct) => {
-            let fields = data_struct.fields.clone();
-            let mut ident_skip_field_vec: Vec<syn::Ident> = Vec::new();
-
-            let cli_fields = fields
-                .iter()
-                .map(|field| {
-                    let ident_field = field.ident.clone().expect("this field does not exist");
-                    let ty = &field.ty;
-                    let cli_ty = self::methods::cli_field_type::cli_field_type(ty);
-                    let mut cli_field = quote! {
-                        pub #ident_field: #cli_ty
-                    };
-                    if field.attrs.is_empty() {
-                        return cli_field;
-                    };
-                    let mut clap_attr_vec: Vec<proc_macro2::TokenStream> = Vec::new();
-                    let mut cfg_attr_vec: Vec<proc_macro2::TokenStream> = Vec::new();
-                    for attr in &field.attrs {
-                        if attr.path.is_ident("interactive_clap") || attr.path.is_ident("cfg") {
-                            for attr_token in attr.tokens.clone() {
-                                match attr_token {
-                                    proc_macro2::TokenTree::Group(group) => {
-                                        let group_string = group.stream().to_string();
-                                        if group_string.contains("subcommand")
-                                            || group_string.contains("value_enum")
-                                            || group_string.contains("long")
-                                            || (group_string == *"skip")
-                                            || (group_string == *"flatten")
-                                        {
-                                            if group_string != LONG_VEC_MUTLIPLE_OPT {
-                                                clap_attr_vec.push(group.stream())
-                                            }
-                                        } else if group.stream().to_string() == *"named_arg" {
-                                            let ident_subcommand =
-                                                syn::Ident::new("subcommand", Span::call_site());
-                                            clap_attr_vec.push(quote! {#ident_subcommand});
-                                            let type_string = match ty {
-                                                syn::Type::Path(type_path) => {
-                                                    match type_path.path.segments.last() {
-                                                        Some(path_segment) => {
-                                                            path_segment.ident.to_string()
-                                                        }
-                                                        _ => String::new(),
-                                                    }
-                                                }
-                                                _ => String::new(),
-                                            };
-                                            let enum_for_clap_named_arg = syn::Ident::new(
-                                                &format!(
-                                                    "ClapNamedArg{}For{}",
-                                                    &type_string, &name
-                                                ),
-                                                Span::call_site(),
-                                            );
-                                            cli_field = quote! {
-                                                pub #ident_field: Option<#enum_for_clap_named_arg>
-                                            }
-                                        };
-                                        if group.stream().to_string().contains("feature") {
-                                            cfg_attr_vec.push(attr.into_token_stream())
-                                        };
-                                        if group.stream().to_string().contains("subargs") {
-                                            let ident_subargs =
-                                                syn::Ident::new("flatten", Span::call_site());
-                                            clap_attr_vec.push(quote! {#ident_subargs});
-                                        };
-                                        if group.stream().to_string() == *"skip" {
-                                            ident_skip_field_vec.push(ident_field.clone());
-                                            cli_field = quote!()
-                                        };
-                                        if group.stream().to_string() == LONG_VEC_MUTLIPLE_OPT {
-                                            if !cli_field_type::starts_with_vec(ty) {
-                                                abort_call_site!("`{}` attribute is only supposed to be used with `Vec` types", LONG_VEC_MUTLIPLE_OPT)
-                                            }
-                                            // implies `#[interactive_clap(long)]`
-                                            clap_attr_vec.push(quote! { long });
-                                            // type goes into output unchanged, otherwise it
-                                            // prevents clap deriving correctly its `remove_many` thing  
-                                            cli_field = quote! {
-                                                pub #ident_field: #ty
-                                            };
-                                        }
-                                    }
-                                    _ => {
-                                        abort_call_site!("Only option `TokenTree::Group` is needed")
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if cli_field.is_empty() {
-                        return cli_field;
-                    };
-                    let cfg_attrs = cfg_attr_vec.iter();
-                    if !clap_attr_vec.is_empty() {
-                        let clap_attrs = clap_attr_vec.iter();
-                        quote! {
-                            #(#cfg_attrs)*
-                            #[clap(#(#clap_attrs, )*)]
-                            #cli_field
-                        }
-                    } else {
-                        quote! {
-                            #(#cfg_attrs)*
-                            #cli_field
-                        }
-                    }
-                })
-                .filter(|token_stream| !token_stream.is_empty())
-                .collect::<Vec<_>>();
-
-            let for_cli_fields = fields
-                .iter()
-                .map(|field| for_cli_field(field, &ident_skip_field_vec))
-                .filter(|token_stream| !token_stream.is_empty());
-
-            let fn_from_cli_for_struct =
-                self::methods::from_cli_for_struct::from_cli_for_struct(ast, &fields);
-
-            let vec_fn_input_arg = self::methods::input_arg::vec_fn_input_arg(ast, &fields);
-
-            let context_scope_fields = fields
-                .iter()
-                .map(context_scope_for_struct_field)
-                .filter(|token_stream| !token_stream.is_empty())
-                .collect::<Vec<_>>();
-            let context_scope_for_struct = context_scope_for_struct(name, context_scope_fields);
-
-            let clap_enum_for_named_arg = fields.iter().find_map(|field| {
-                let ident_field = &field.clone().ident.expect("this field does not exist");
-                let variant_name_string = crate::helpers::snake_case_to_camel_case::snake_case_to_camel_case(ident_field.to_string());
-                let variant_name = &syn::Ident::new(&variant_name_string, Span::call_site());
-                let attr_doc_vec: Vec<_> = field.attrs.iter()
-                    .filter(|attr| attr.path.is_ident("doc"))
-                    .map(|attr| attr.into_token_stream())
-                    .collect();
-                field.attrs.iter()
-                    .filter(|attr| attr.path.is_ident("interactive_clap"))
-                    .flat_map(|attr| attr.tokens.clone())
-                    .filter(|attr_token| {
-                        match attr_token {
-                            proc_macro2::TokenTree::Group(group) => group.stream().to_string() == *"named_arg",
-                            _ => abort_call_site!("Only option `TokenTree::Group` is needed")
-                        }
-                    })
-                    .map(|_| {
-                        let ty = &field.ty;
-                        let type_string = match ty {
-                            syn::Type::Path(type_path) => {
-                                match type_path.path.segments.last() {
-                                    Some(path_segment) => path_segment.ident.to_string(),
-                                    _ => String::new()
-                                }
-                            },
-                            _ => String::new()
-                        };
-                        let enum_for_clap_named_arg = syn::Ident::new(&format!("ClapNamedArg{}For{}", &type_string, &name), Span::call_site());
-                        quote! {
-                            #[derive(Debug, Clone, clap::Parser, interactive_clap_derive::ToCliArgs)]
-                            pub enum #enum_for_clap_named_arg {
-                                #(#attr_doc_vec)*
-                                #variant_name(<#ty as interactive_clap::ToCli>::CliVariant)
-                            }
-
-                            impl From<#ty> for #enum_for_clap_named_arg {
-                                fn from(item: #ty) -> Self {
-                                    Self::#variant_name(<#ty as interactive_clap::ToCli>::CliVariant::from(item))
-                                }
-                            }
-                        }
-                    })
-                    .next()
-                })
-                .unwrap_or(quote!());
-
-            quote! {
-                #[derive(Debug, Default, Clone, clap::Parser, interactive_clap::ToCliArgs)]
-                #[clap(author, version, about, long_about = None)]
-                pub struct #cli_name {
-                    #( #cli_fields, )*
-                }
-
-                impl interactive_clap::ToCli for #name {
-                    type CliVariant = #cli_name;
-                }
-
-                #context_scope_for_struct
-
-                #fn_from_cli_for_struct
-
-                impl #name {
-                    #(#vec_fn_input_arg)*
-
-                    pub fn try_parse() -> Result<#cli_name, clap::Error> {
-                        <#cli_name as clap::Parser>::try_parse()
-                    }
-
-                    pub fn parse() -> #cli_name {
-                        <#cli_name as clap::Parser>::parse()
-                    }
-
-                    pub fn try_parse_from<I, T>(itr: I) -> Result<#cli_name, clap::Error>
-                    where
-                        I: ::std::iter::IntoIterator<Item = T>,
-                        T: ::std::convert::Into<::std::ffi::OsString> + ::std::clone::Clone,
-                    {
-                        <#cli_name as clap::Parser>::try_parse_from(itr)
-                    }
-                }
-
-                impl From<#name> for #cli_name {
-                    fn from(args: #name) -> Self {
-                        Self {
-                            #( #for_cli_fields, )*
-                        }
-                    }
-                }
-
-                #clap_enum_for_named_arg
-            }
+            self::structs::token_stream(name, &cli_name, ast, &data_struct.fields)
         }
         syn::Data::Enum(syn::DataEnum { variants, .. }) => {
             let enum_variants = variants.iter().map(|variant| {
@@ -321,10 +107,11 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
 
             let scope_for_enum = context_scope_for_enum(name);
 
-            let fn_choose_variant = self::methods::choose_variant::fn_choose_variant(ast, variants);
+            let fn_choose_variant =
+                self::common_methods::choose_variant::fn_choose_variant(ast, variants);
 
             let fn_from_cli_for_enum =
-                self::methods::from_cli_for_enum::from_cli_for_enum(ast, variants);
+                self::common_methods::from_cli_for_enum::from_cli_for_enum(ast, variants);
 
             quote! {
                 #[derive(Debug, Clone, clap::Parser, interactive_clap::ToCliArgs)]
@@ -373,35 +160,56 @@ pub fn impl_interactive_clap(ast: &syn::DeriveInput) -> TokenStream {
     }
 }
 
-fn context_scope_for_struct(
-    name: &syn::Ident,
-    context_scope_fields: Vec<proc_macro2::TokenStream>,
-) -> proc_macro2::TokenStream {
-    let interactive_clap_context_scope_for_struct = syn::Ident::new(
-        &format!("InteractiveClapContextScopeFor{}", &name),
-        Span::call_site(),
-    );
-    quote! {
-        pub struct #interactive_clap_context_scope_for_struct {
-            #(#context_scope_fields,)*
-        }
-        impl interactive_clap::ToInteractiveClapContextScope for #name {
-            type InteractiveClapContextScope = #interactive_clap_context_scope_for_struct;
-        }
-    }
-}
+/** This module describes [`crate::InteractiveClap`] derive logic in case when [`syn::DeriveInput`]
+is a struct
 
-fn context_scope_for_struct_field(field: &syn::Field) -> proc_macro2::TokenStream {
-    let ident_field = &field.ident.clone().expect("this field does not exist");
-    let ty = &field.ty;
-    if !self::methods::fields_with_subcommand::is_field_with_subcommand(field)
-        && !self::methods::fields_with_subargs::is_field_with_subargs(field)
-    {
-        quote! {
-            pub #ident_field: #ty
+The structure of produced derive output is as follows, where code blocks are generated by
+submodules with corresponding names:
+
+```rust,ignore
+quote::quote! {
+    #to_cli_trait_block
+    #input_args_impl_block
+    #to_interactive_clap_context_scope_trait_block
+    #from_cli_trait_block
+    #clap_for_named_arg_enum_block
+}
+```
+*/
+pub(crate) mod structs {
+    pub(crate) mod to_cli_trait;
+
+    mod input_args_impl;
+
+    mod to_interactive_clap_context_scope_trait;
+
+    mod from_cli_trait;
+
+    mod clap_for_named_arg_enum;
+
+    /// these are common field methods, reused by other [structs](super::structs) submodules
+    pub(super) mod common_field_methods;
+
+    /// returns the whole result `TokenStream` of derive logic of containing module
+    pub fn token_stream(
+        name: &syn::Ident,
+        cli_name: &syn::Ident,
+        ast: &syn::DeriveInput,
+        fields: &syn::Fields,
+    ) -> proc_macro2::TokenStream {
+        let b1 = to_cli_trait::token_stream(name, cli_name, fields);
+        let b2 = input_args_impl::token_stream(ast, fields);
+        let b3 = to_interactive_clap_context_scope_trait::token_stream(ast, fields);
+        let b4 = from_cli_trait::token_stream(ast, fields);
+        let b5 = clap_for_named_arg_enum::token_stream(ast, fields);
+
+        quote::quote! {
+            #b1
+            #b2
+            #b3
+            #b4
+            #b5
         }
-    } else {
-        quote!()
     }
 }
 
@@ -419,46 +227,37 @@ fn context_scope_for_enum(name: &syn::Ident) -> proc_macro2::TokenStream {
     }
 }
 
-fn for_cli_field(
-    field: &syn::Field,
-    ident_skip_field_vec: &[syn::Ident],
-) -> proc_macro2::TokenStream {
-    let ident_field = &field.clone().ident.expect("this field does not exist");
-    if ident_skip_field_vec.contains(ident_field) {
-        quote!()
-    } else {
-        let ty = &field.ty;
-        if field.attrs.iter().any(|attr|
-            attr.path.is_ident("interactive_clap") &&
-            attr.tokens.clone().into_iter().any(
-                |attr_token|
-                matches!(
-                    attr_token,
-                    proc_macro2::TokenTree::Group(group) if group.stream().to_string() == LONG_VEC_MUTLIPLE_OPT
-                )
-            )
-        ) {
-            return quote! {
-                #ident_field: args.#ident_field.into()
-            };
+#[cfg(test)]
+pub(crate) mod to_cli_args_structs_test_bridge {
+    struct Opts {
+        name: syn::Ident,
+        cli_name: syn::Ident,
+        input_fields: syn::Fields,
+    }
+    fn prepare(ast: &syn::DeriveInput) -> Opts {
+        let (name, cli_name) = super::get_names(ast);
+        let input_fields = match &ast.data {
+            syn::Data::Struct(data_struct) => data_struct.fields.clone(),
+            syn::Data::Enum(..) | syn::Data::Union(..) => {
+                unreachable!("stuct DeriveInput expected");
+            }
+        };
+        Opts {
+            name: name.clone(),
+            cli_name,
+            input_fields,
         }
+    }
 
-        match &ty {
-            syn::Type::Path(type_path) => match type_path.path.segments.first() {
-                Some(path_segment) => {
-                    if path_segment.ident == "Option" || path_segment.ident == "bool" {
-                        quote! {
-                            #ident_field: args.#ident_field.into()
-                        }
-                    } else {
-                        quote! {
-                            #ident_field: Some(args.#ident_field.into())
-                        }
-                    }
-                }
-                _ => abort_call_site!("Only option `PathSegment` is needed"),
-            },
-            _ => abort_call_site!("Only option `Type::Path` is needed"),
-        }
+    pub fn partial_output(ast: &syn::DeriveInput) -> syn::Result<syn::DeriveInput> {
+        let opts = prepare(ast);
+
+        let (token_stream, _unused_byproduct) =
+            super::structs::to_cli_trait::cli_variant_struct::token_stream(
+                &opts.name,
+                &opts.cli_name,
+                &opts.input_fields,
+            );
+        syn::parse2(token_stream)
     }
 }

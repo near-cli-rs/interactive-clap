@@ -1,11 +1,16 @@
 //! The Interactive-clap library is an add-on for the Command Line Argument
-//! Parser (https://crates.io/crates/clap). Interactive-clap allows you to parse
+//! Parser ([`CLAP`](https://crates.io/crates/clap>)). Interactive-clap allows you to parse
 //! command line options. The peculiarity of this macro is that in the absence
 //! of command line parameters, the interactive mode of entering these data by
 //! the user is activated.
 
 pub use interactive_clap_derive::{InteractiveClap, ToCliArgs};
 
+/// Associated type [`Self::CliVariant`] is defined during derive of
+/// [`macro@crate::InteractiveClap`]
+///
+/// This type has derive of [`clap::Parser`](https://docs.rs/clap/4.5.24/clap/trait.Parser.html), which allows to parse
+/// initial input on cli, which may be incomplete
 pub trait ToCli {
     type CliVariant;
 }
@@ -26,6 +31,7 @@ impl ToCli for bool {
     type CliVariant = bool;
 }
 
+// TODO: the trait can clearly be shortened/renamed to `ContextScope`
 pub trait ToInteractiveClapContextScope {
     type InteractiveClapContextScope;
 }
@@ -41,6 +47,10 @@ pub enum ResultFromCli<T, E> {
     Err(Option<T>, E),
 }
 
+/// This trait drives the state machine of `interactive_clap`
+///
+/// It selects next command variants with [inquire::Select](https://docs.rs/inquire/0.6.2/inquire/struct.Select.html)
+/// and prompts for non-optional arguments with [inquire::CustomType](https://docs.rs/inquire/0.6.2/inquire/struct.CustomType.html)  
 pub trait FromCli {
     type FromCliContext;
     type FromCliError;
