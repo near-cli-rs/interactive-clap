@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2](https://github.com/near-cli-rs/interactive-clap/compare/interactive-clap-derive-v0.3.1...interactive-clap-derive-v0.3.2) - 2025-02-11
+
+### Added
+
+- propagate doc comments on flags and arguments to `--help/-h` + structs derive refactor (#26)
+
+### Other
+
+- Added code style check (#29)
+
 ## [0.3.1](https://github.com/near-cli-rs/interactive-clap/compare/interactive-clap-derive-v0.3.0...interactive-clap-derive-v0.3.1) - 2024-09-18
 
 ### Added
