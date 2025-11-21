@@ -26,3 +26,5 @@ clap = { version = "4.0.18", features = ["derive"] }
 
 inquire = "0.6"
 color-eyre = "0.6"
+cliclack = "0.3.6"
+ctrlc = "3.5.1"

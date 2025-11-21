@@ -62,6 +62,7 @@ pub trait FromCli {
         Self: Sized + ToCli;
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum SelectVariantOrBack<T: strum::EnumMessage> {
     Variant(T),
     Back,

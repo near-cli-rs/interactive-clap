@@ -92,17 +92,19 @@ pub fn fn_choose_variant(
 
             cli_variant = quote! {
                 use interactive_clap::SelectVariantOrBack;
-                use inquire::Select;
+                use cliclack::select;
                 use strum::{EnumMessage, IntoEnumIterator};
 
-                let selected_variant = Select::new(
-                    concat!(#( #doc_attrs, )*).trim(),
-                    #command_discriminants::iter()
-                        .map(SelectVariantOrBack::Variant)
-                        #actions_push_back
-                        .collect(),
-                )
-                .prompt();
+                let variants = #command_discriminants::iter()
+                    .map(SelectVariantOrBack::Variant)
+                    #actions_push_back
+                    .map(|v| (v.clone(), v, ""))
+                    .collect::<Vec<_>>();
+
+                let selected_variant = select(concat!(#( #doc_attrs, )*).trim())
+                    .items(&variants)
+                    .interact();
+
                 match selected_variant {
                     Ok(SelectVariantOrBack::Variant(variant)) => {
                         let cli_args = match variant {
@@ -111,10 +113,7 @@ pub fn fn_choose_variant(
                         return interactive_clap::ResultFromCli::Ok(cli_args);
                     },
                     Ok(SelectVariantOrBack::Back) => return interactive_clap::ResultFromCli::Back,
-                    Err(
-                        inquire::error::InquireError::OperationCanceled
-                        | inquire::error::InquireError::OperationInterrupted,
-                    ) => return interactive_clap::ResultFromCli::Cancel(None),
+                    Err(OperationInterrupted) => return interactive_clap::ResultFromCli::Cancel(None),
                     Err(err) => return interactive_clap::ResultFromCli::Err(None, err.into()),
                 }
             };
