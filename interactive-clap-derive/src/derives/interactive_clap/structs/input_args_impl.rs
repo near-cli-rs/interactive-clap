@@ -1,9 +1,9 @@
 /*!
-per-field input with [inquire::CustomType](https://docs.rs/inquire/0.6.2/inquire/struct.CustomType.html) impl block
+per-field input with [cliclack::Input](https://docs.rs/cliclack/0.3.6/cliclack/struct.Input.html) impl block
 
 This modules describes derive of input args implementation block for `#name` struct,
 which contains functions `input_#field_ident` per each field,
-which prompt for value of each field via [inquire::CustomType](https://docs.rs/inquire/0.6.2/inquire/struct.CustomType.html)
+which prompt for value of each field via [cliclack::Input](https://docs.rs/cliclack/0.3.6/cliclack/struct.Input.html)
 , which happens during derive of [`crate::InteractiveClap`] for `#name` struct:
 
 derive input `#name`
@@ -22,22 +22,16 @@ gets transformed
 ```rust,ignore
 impl #name {
     fn input_age(_context: &()) -> color_eyre::eyre::Result<Option<u64>> {
-        match inquire::CustomType::new("age").prompt() {
+        match cliclack::input("age").interact() {
             Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
             Err(err) => Err(err.into()),
         }
     }
     fn input_first_name(_context: &()) -> color_eyre::eyre::Result<Option<String>> {
-        match inquire::CustomType::new("first_name").prompt() {
+        match cliclack::input("first_name").interact() {
             Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
             Err(err) => Err(err.into()),
         }
     }
@@ -92,9 +86,9 @@ fn vec_fn_input_arg(ast: &syn::DeriveInput, fields: &syn::Fields) -> Vec<proc_ma
                     fn #fn_input_arg(
                         _context: &#input_context_dir,
                     ) -> color_eyre::eyre::Result<Option<#ty>> {
-                        match inquire::CustomType::new(#promt).prompt() {
+                        match cliclack::input(#promt).interact() {
                             Ok(value) => Ok(Some(value)),
-                            Err(inquire::error::InquireError::OperationCanceled | inquire::error::InquireError::OperationInterrupted) => Ok(None),
+                            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
                             Err(err) => Err(err.into()),
                         }
                     }
@@ -122,9 +116,9 @@ fn vec_fn_input_arg(ast: &syn::DeriveInput, fields: &syn::Fields) -> Vec<proc_ma
                 fn #fn_input_arg(
                     _context: &#input_context_dir,
                 ) -> color_eyre::eyre::Result<Option<#ty>> {
-                    match inquire::CustomType::new(concat!(#( #doc_attrs, )*).trim()).prompt() {
+                    match cliclack::input(concat!(#( #doc_attrs, )*).trim()).interact() {
                         Ok(value) => Ok(Some(value)),
-                        Err(inquire::error::InquireError::OperationCanceled | inquire::error::InquireError::OperationInterrupted) => Ok(None),
+                        Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
                         Err(err) => Err(err.into()),
                     }
                 }
