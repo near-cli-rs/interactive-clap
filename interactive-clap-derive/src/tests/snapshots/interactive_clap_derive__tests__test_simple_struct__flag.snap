@@ -36,12 +36,9 @@ impl From<Args> for CliArgs {
 }
 impl Args {
     fn input_offline(_context: &()) -> color_eyre::eyre::Result<Option<bool>> {
-        match inquire::CustomType::new(concat!(r" Offline mode",).trim()).prompt() {
+        match cliclack::input(concat!(r" Offline mode",).trim()).interact() {
             Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
             Err(err) => Err(err.into()),
         }
     }

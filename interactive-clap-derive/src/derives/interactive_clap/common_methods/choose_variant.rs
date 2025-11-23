@@ -113,7 +113,7 @@ pub fn fn_choose_variant(
                         return interactive_clap::ResultFromCli::Ok(cli_args);
                     },
                     Ok(SelectVariantOrBack::Back) => return interactive_clap::ResultFromCli::Back,
-                    Err(OperationInterrupted) => return interactive_clap::ResultFromCli::Cancel(None),
+                    Err(err) if err.kind() == std::io::ErrorKind::Interrupted => return interactive_clap::ResultFromCli::Cancel(None),
                     Err(err) => return interactive_clap::ResultFromCli::Err(None, err.into()),
                 }
             };

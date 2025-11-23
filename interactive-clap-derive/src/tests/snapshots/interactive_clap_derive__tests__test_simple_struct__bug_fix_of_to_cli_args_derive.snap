@@ -39,16 +39,11 @@ impl ViewAccountSummary {
     fn input_account_id(
         _context: &(),
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        match inquire::CustomType::new(
-                concat!(r" What Account ID do you need to view?",).trim(),
-            )
-            .prompt()
+        match cliclack::input(concat!(r" What Account ID do you need to view?",).trim())
+            .interact()
         {
             Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
             Err(err) => Err(err.into()),
         }
     }

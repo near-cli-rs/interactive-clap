@@ -66,16 +66,18 @@ impl Mode {
         <Self as interactive_clap::FromCli>::FromCliError,
     > {
         use interactive_clap::SelectVariantOrBack;
-        use inquire::Select;
+        use cliclack::select;
         use strum::{EnumMessage, IntoEnumIterator};
-        let selected_variant = Select::new(
+        let variants = ModeDiscriminants::iter()
+            .map(SelectVariantOrBack::Variant)
+            .chain([SelectVariantOrBack::Back])
+            .map(|v| (v.clone(), v, ""))
+            .collect::<Vec<_>>();
+        let selected_variant = select(
                 concat!(r" A little beautiful comment about our choice",).trim(),
-                ModeDiscriminants::iter()
-                    .map(SelectVariantOrBack::Variant)
-                    .chain([SelectVariantOrBack::Back])
-                    .collect(),
             )
-            .prompt();
+            .items(&variants)
+            .interact();
         match selected_variant {
             Ok(SelectVariantOrBack::Variant(variant)) => {
                 let cli_args = match variant {
@@ -85,10 +87,9 @@ impl Mode {
                 return interactive_clap::ResultFromCli::Ok(cli_args);
             }
             Ok(SelectVariantOrBack::Back) => return interactive_clap::ResultFromCli::Back,
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => return interactive_clap::ResultFromCli::Cancel(None),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => {
+                return interactive_clap::ResultFromCli::Cancel(None);
+            }
             Err(err) => return interactive_clap::ResultFromCli::Err(None, err.into()),
         }
     }

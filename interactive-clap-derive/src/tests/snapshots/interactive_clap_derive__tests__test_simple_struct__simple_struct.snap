@@ -38,32 +38,23 @@ impl From<Args> for CliArgs {
 }
 impl Args {
     fn input_age(_context: &()) -> color_eyre::eyre::Result<Option<u64>> {
-        match inquire::CustomType::new("age").prompt() {
+        match cliclack::input("age").interact() {
             Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
             Err(err) => Err(err.into()),
         }
     }
     fn input_first_name(_context: &()) -> color_eyre::eyre::Result<Option<String>> {
-        match inquire::CustomType::new("first_name").prompt() {
+        match cliclack::input("first_name").interact() {
             Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
             Err(err) => Err(err.into()),
         }
     }
     fn input_second_name(_context: &()) -> color_eyre::eyre::Result<Option<String>> {
-        match inquire::CustomType::new("second_name").prompt() {
+        match cliclack::input("second_name").interact() {
             Ok(value) => Ok(Some(value)),
-            Err(
-                inquire::error::InquireError::OperationCanceled
-                | inquire::error::InquireError::OperationInterrupted,
-            ) => Ok(None),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => Ok(None),
             Err(err) => Err(err.into()),
         }
     }
