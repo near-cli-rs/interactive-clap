@@ -11,7 +11,7 @@ pub(super) mod common_methods;
 fn get_names(ast: &syn::DeriveInput) -> (&syn::Ident, syn::Ident) {
     let name = &ast.ident;
     let cli_name = {
-        let cli_name_string = format!("Cli{}", name);
+        let cli_name_string = format!("Cli{name}");
         syn::Ident::new(&cli_name_string, Span::call_site())
     };
     (name, cli_name)
